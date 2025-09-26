@@ -1,4 +1,3 @@
-import { promises } from "fs";
 import { homedir } from "os";
 import {
 	commands,
@@ -25,6 +24,7 @@ import { SpecExplorerProvider } from "./providers/spec-explorer-provider";
 import { SpecTaskCodeLensProvider } from "./providers/spec-task-code-lens-provider";
 import { SteeringExplorerProvider } from "./providers/steering-explorer-provider";
 import { PromptLoader } from "./services/prompt-loader";
+import { addDocumentToCodexChat } from "./utils/codex-chat-utils";
 import { ConfigManager } from "./utils/config-manager";
 
 let codexProvider: CodexProvider;
@@ -417,34 +417,35 @@ function registerCommands(
 		}),
 		commands.registerCommand(
 			"kiro-codex-ide.prompts.run",
+			// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: ignore
 			async (filePathOrItem?: any) => {
 				try {
-					let target: string | undefined;
+					let targetUri: Uri | undefined;
 
-					// 1) If called with a string path
 					if (typeof filePathOrItem === "string") {
-						target = filePathOrItem;
-					}
-					// 2) If invoked from a tree item (inline button)
-					else if (filePathOrItem && typeof filePathOrItem === "object") {
-						const candidate =
-							(filePathOrItem.resourcePath as string | undefined) ||
-							filePathOrItem.resourceUri?.fsPath;
-						if (candidate) {
-							target = candidate;
+						targetUri = Uri.file(filePathOrItem);
+					} else if (filePathOrItem && typeof filePathOrItem === "object") {
+						const candidateUri: Uri | undefined =
+							filePathOrItem.resourceUri ??
+							(typeof filePathOrItem.resourcePath === "string"
+								? Uri.file(filePathOrItem.resourcePath)
+								: undefined);
+
+						if (candidateUri) {
+							targetUri = candidateUri;
 						}
 					}
-					// 3) Fallback to active editor
-					if (!target) {
-						const active = window.activeTextEditor?.document.uri.fsPath;
-						target = active;
+
+					if (!targetUri) {
+						targetUri = window.activeTextEditor?.document.uri;
 					}
-					if (!target) {
+
+					if (!targetUri) {
 						window.showErrorMessage("No prompt file selected");
 						return;
 					}
-					const content = await promises.readFile(target, "utf8");
-					await codexProvider.executePlan(content);
+
+					await addDocumentToCodexChat(targetUri);
 				} catch (e) {
 					window.showErrorMessage(`Failed to run prompt: ${e}`);
 				}
