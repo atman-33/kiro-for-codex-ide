@@ -1,0 +1,134 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Existing version to publish (e.g., 1.2.3)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/v{0}', github.event.inputs.version) || github.ref }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            webview-ui/package-lock.json
+          
+      - name: Install dependencies (root)
+        run: npm ci
+      - name: Install dependencies (webview-ui)
+        run: npm --prefix webview-ui ci
+        
+      - name: Build Project
+        run: npm run build
+        
+      - name: Install vsce
+        run: npm install -g @vscode/vsce
+        
+      - name: Build VSIX
+        run: vsce package
+        
+      - name: Determine release version
+        id: get_version
+        env:
+          INPUT_VERSION: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || '' }}
+        run: |
+          if [ -n "$INPUT_VERSION" ]; then
+            VERSION="$INPUT_VERSION"
+          else
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          fi
+
+          if [ -z "$VERSION" ]; then
+            echo "::error::Unable to determine release version." >&2
+            exit 1
+          fi
+
+          if ! git rev-parse "refs/tags/v$VERSION" >/dev/null 2>&1; then
+            echo "::error::Tag v$VERSION not found in repository." >&2
+            exit 1
+          fi
+
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+        
+      - name: Get previous tag
+        id: get_previous_tag
+        run: |
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          echo "PREVIOUS_TAG=$PREVIOUS_TAG" >> $GITHUB_OUTPUT
+          
+      - name: Extract changelog for current version
+        id: extract_changelog
+        run: |
+          # Extract the changelog section for the current version
+          VERSION="${{ steps.get_version.outputs.VERSION }}"
+          # Use awk to capture lines after the matching header until the next header or EOF
+          awk -v ver="$VERSION" '
+            $0 ~ "^## \\[" ver "\\]" {capture=1; next}
+            capture && $0 ~ /^## \[/ {capture=0}
+            capture {print}
+          ' CHANGELOG.md > version_changelog.txt
+
+          # Check if we found content
+          if [ -s version_changelog.txt ]; then
+            echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+            cat version_changelog.txt >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "CHANGELOG=_No changelog found for version $VERSION in CHANGELOG.md_" >> $GITHUB_OUTPUT
+          fi
+          
+          rm -f version_changelog.txt
+        
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.get_version.outputs.VERSION }}
+          files: '*.vsix'
+          generate_release_notes: true
+          name: Release v${{ steps.get_version.outputs.VERSION }}
+          body: |
+            ## Release v${{ steps.get_version.outputs.VERSION }}
+
+            ${{ steps.extract_changelog.outputs.CHANGELOG }}
+
+            ---
+            See below for auto-generated release notes.
+      
+      # Publish to both registries (idempotent)
+      - name: Publish to VS Code Marketplace
+        uses: HaaLeo/publish-vscode-extension@v2
+        with:
+          pat: ${{ secrets.VSCE_PAT }}
+          registryUrl: https://marketplace.visualstudio.com
+          dependencies: false
+          skipDuplicate: true
+
+      - name: Publish to Open VSX
+        uses: HaaLeo/publish-vscode-extension@v2
+        with:
+          pat: ${{ secrets.OPEN_VSX_TOKEN }}
+          registryUrl: https://open-vsx.org
+          dependencies: false
+          skipDuplicate: true

@@ -1,0 +1,110 @@
+{
+  "name": "vscode-extension-boilerplate",
+  "displayName": "VSCode Extension Boilerplate",
+  "description": "",
+  "version": "0.1.0",
+  "author": "atman-33",
+  "publisher": "atman-dev",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/atman-33/vscode-extension-boilerplate"
+  },
+  "engines": {
+    "vscode": "^1.84.0"
+  },
+  "categories": [],
+  "activationEvents": [],
+  "main": "dist/extension.js",
+  "extensionKind": [
+    "workspace",
+    "ui"
+  ],
+  "scripts": {
+    "install:all": "npm install && cd webview-ui && npm install",
+    "build:ext": "esbuild src/extension.ts --bundle --platform=node --target=node16 --external:vscode --outfile=dist/extension.js",
+    "build": "npm run build:ext && npm run build:webview",
+    "vscode:prepublish": "npm run build",
+    "compile": "npm run build && npm run package",
+    "watch": "concurrently \"tsc -w -p ./\" \"npm:watch:webview\"",
+    "package": "vsce package",
+    "lint": "ultracite lint",
+    "format": "ultracite format",
+    "check": "ultracite check",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "prepare": "husky",
+    "--- WEBVIEW ---": "--- --- --- --- ---",
+    "build:webview": "npm --prefix webview-ui run build",
+    "watch:webview": "npm --prefix webview-ui run dev"
+  },
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "vscode-extension-boilerplate",
+          "title": "VSCode Extension Boilerplate",
+          "icon": "./icons/sample.svg"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "vscode-extension-boilerplate.showInformation",
+        "title": "Boilerplate: Show Information"
+      },
+      {
+        "command": "vscode-extension-boilerplate.reverseSelection",
+        "title": "Boilerplate: Reverse Selection"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "vscode-extension-boilerplate.showInformation",
+          "when": "true"
+        },
+        {
+          "command": "vscode-extension-boilerplate.reverseSelection",
+          "when": "editorHasSelection"
+        }
+      ]
+    },
+    "views": {
+      "vscode-extension-boilerplate": [
+        {
+          "id": "vscode-extension-boilerplate.simpleView",
+          "name": "Simple View",
+          "type": "webview",
+          "icon": ""
+        },
+        {
+          "id": "vscode-extension-boilerplate.interactiveView",
+          "name": "Interactive View",
+          "type": "webview",
+          "icon": ""
+        }
+      ]
+    }
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.2.4",
+    "@jest/globals": "^29.7.0",
+    "@types/glob": "^8.1.0",
+    "@types/node": "^20.x",
+    "@types/vscode": "^1.84.0",
+    "@vitest/ui": "^3.2.4",
+    "concurrently": "^9.2.0",
+    "copy-webpack-plugin": "^13.0.0",
+    "esbuild": "^0.23.0",
+    "husky": "^9.1.7",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.4.0",
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.3.0",
+    "ultracite": "^5.4.4",
+    "vitest": "^3.2.4",
+    "vsce": "^2.15.0"
+  }
+}

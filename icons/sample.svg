@@ -1,0 +1,32 @@
+<?xml version="1.0" ?>
+<!DOCTYPE svg  PUBLIC '-//W3C//DTD SVG 1.1//EN'  'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd'>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 64 64" enable-background="new 0 0 64 64" version="1.1" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="Home"/>
+<g id="Camera"/>
+<g id="Mail"/>
+<g id="Print"/>
+<g id="Save"/>
+<g id="Folder"/>
+<g id="Search"/>
+<g id="User"/>
+<g id="Pin"/>
+<g id="Calendar"/>
+<g id="Gallery"/>
+<g id="time"/>
+<g id="Pin_1_"/>
+<g id="Setting">
+<g>
+<path d="M55,39c-0.5,1.5-1.1,2.9-1.8,4.3l1.5,1.5c1.3,1.3,2,3.1,2,5s-0.7,3.6-2,5s-3.1,2-5,2s-3.6-0.7-5-2    l-1.4-1.5c-1.4,0.7-2.8,1.3-4.3,1.8v0c0,3.9-3.1,7-7,7s-7-3.1-7-7v0c-1.5-0.5-2.9-1-4.3-1.8l-1.4,1.5c-1.3,1.3-3.1,2-5,2    s-3.6-0.7-5-2s-2-3.1-2-5s0.7-3.6,2-5l1.5-1.5C10.1,41.9,9.5,40.5,9,39h0c-3.9,0-7-3.1-7-7s3.1-7,7-7h0c0.5-1.5,1.1-2.9,1.8-4.3    l-1.5-1.5c-1.3-1.3-2-3.1-2-4.9s0.7-3.6,2-5s3.1-2,5-2s3.6,0.7,5,2l1.4,1.5c1.4-0.7,2.8-1.3,4.3-1.8v0c0-3.9,3.1-7,7-7s7,3.1,7,7    v0c1.5,0.5,2.9,1,4.3,1.8l1.4-1.5c1.3-1.3,3.1-2,5-2s3.6,0.7,5,2s2,3.1,2,5s-0.7,3.6-2,4.9l-1.5,1.5c0.7,1.4,1.3,2.8,1.8,4.3h0    c3.9,0,7,3.1,7,7S58.9,39,55,39L55,39z" fill="#3F51B5"/>
+</g>
+<g>
+<path d="M46,32c0,7.7-6.3,14-14,14s-14-6.3-14-14c0-7.7,6.3-14,14-14S46,24.3,46,32z" fill="#16BCD4"/>
+</g>
+</g>
+<g id="Player"/>
+<g id="Lock"/>
+<g id="Trash_Can"/>
+<g id="Notification"/>
+<g id="Record"/>
+<g id="Shopping_Bag"/>
+</svg>

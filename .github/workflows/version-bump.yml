@@ -1,0 +1,76 @@
+name: Version Bump
+
+permissions:
+  contents: write
+  pull-requests: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'Select version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Universal Version Bump
+        uses: taj54/universal-version-bump@v0.14.0
+        with:
+          release_type: ${{ inputs.release_type }}
+          target_platform: custom
+          bump_targets: |
+            [
+              {"path": "package.json", "variable": "version"},
+              {"path": "package-lock.json",  "variable": "version"}
+            ]
+          git_tag: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read package.json version
+        id: pkg
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          echo "PKG_VERSION=$PKG_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Configure Git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      # NOTE: Universal Version Bump action is responsible for committing and pushing
+      # version and CHANGELOG updates. No manual changelog step is required here.
+
+      - name: Ensure tag does not already exist on origin
+        run: |
+          VERSION="${{ steps.pkg.outputs.PKG_VERSION }}"
+          if git ls-remote --tags origin "refs/tags/v$VERSION" | grep -q .; then
+            echo "::error::Tag v$VERSION already exists on origin."
+            exit 1
+          fi
+
+      - name: Create and push tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.pkg.outputs.PKG_VERSION }}"
+          git tag -a "v$VERSION" -m "chore(release): v$VERSION"
+          git push origin "refs/tags/v$VERSION"
