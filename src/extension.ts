@@ -56,7 +56,7 @@ export async function activate(context: ExtensionContext) {
 	codexProvider = new CodexProvider(context, outputChannel);
 
 	// Initialize feature managers with output channel
-	specManager = new SpecManager(codexProvider, outputChannel);
+	specManager = new SpecManager(outputChannel);
 	steeringManager = new SteeringManager(codexProvider, outputChannel);
 
 	// Register tree data providers
@@ -138,6 +138,8 @@ async function initializeDefaultSettings() {
 		// Directory might already exist
 	}
 
+	await ensureCodexGitignore(codexDir);
+
 	// Create kiro-codex-ide-settings.json in .codex directory
 	const codexSettingsFile = Uri.joinPath(codexSettingsDir, CONFIG_FILE_NAME);
 
@@ -155,6 +157,27 @@ async function initializeDefaultSettings() {
 		);
 	}
 }
+
+const ensureCodexGitignore = async (codexDir: Uri): Promise<void> => {
+	const gitignoreUri = Uri.joinPath(codexDir, ".gitignore");
+
+	try {
+		await workspace.fs.stat(gitignoreUri);
+		return;
+	} catch (error) {
+		// File does not exist; fall through to create it.
+	}
+
+	const content = Buffer.from("tmp/\n", "utf8");
+
+	try {
+		await workspace.fs.writeFile(gitignoreUri, content);
+	} catch (error) {
+		outputChannel.appendLine(
+			`[Init] Failed to create .codex/.gitignore: ${error instanceof Error ? error.message : error}`
+		);
+	}
+};
 
 async function toggleViews() {
 	const config = workspace.getConfiguration(VSC_CONFIG_NAMESPACE);
@@ -214,17 +237,23 @@ function registerCommands(
 ) {
 	const createSpecCommand = commands.registerCommand(
 		"kiro-codex-ide.spec.create",
-		// biome-ignore lint/suspicious/useAwait: ignore
 		async () => {
 			outputChannel.appendLine(
-				"\n=== COMMAND kiro-codex-ide.spec.create TRIGGERED ==="
+				`[Spec] create command triggered at ${new Date().toISOString()}`
 			);
-			outputChannel.appendLine(`Time: ${new Date().toLocaleTimeString()}`);
-			// TODO: Prompt for spec name and create spec
+
+			try {
+				await specManager.create();
+			} catch (error) {
+				const message = error instanceof Error ? error.message : String(error);
+				outputChannel.appendLine(`[Spec] create command failed: ${message}`);
+				window.showErrorMessage(`Failed to create spec prompt: ${message}`);
+			}
 		}
 	);
 
 	context.subscriptions.push(
+		createSpecCommand,
 		commands.registerCommand(
 			"kiro-codex-ide.spec.navigate.requirements",
 			async (specName: string) => {

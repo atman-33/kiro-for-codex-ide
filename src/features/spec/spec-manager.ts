@@ -1,35 +1,28 @@
-import { basename, dirname, join } from "path";
+import { dirname, join } from "path";
 import {
-	type Disposable,
-	type FileSystemWatcher,
 	FileType,
 	type OutputChannel,
-	RelativePattern,
-	type Terminal,
 	Uri,
 	ViewColumn,
 	window,
 	workspace,
-	type WorkspaceFolder,
 } from "vscode";
-import type { CodexProvider } from "../../providers/codex-provider";
 import { PromptLoader } from "../../services/prompt-loader";
 import { ConfigManager } from "../../utils/config-manager";
 import { NotificationUtils } from "../../utils/notification-utils";
+import { sendPromptToChat } from "../../utils/chat-prompt-runner";
 
 export type SpecDocumentType = "requirements" | "design" | "tasks";
 
 export class SpecManager {
 	private readonly configManager: ConfigManager;
 	private readonly promptLoader: PromptLoader;
-	private readonly codexProvider: CodexProvider;
 	private readonly outputChannel: OutputChannel;
 
-	constructor(codexProvider: CodexProvider, outputChannel: OutputChannel) {
+	constructor(outputChannel: OutputChannel) {
 		this.configManager = ConfigManager.getInstance();
 		this.configManager.loadSettings();
 		this.promptLoader = PromptLoader.getInstance();
-		this.codexProvider = codexProvider;
 		this.outputChannel = outputChannel;
 	}
 
@@ -58,111 +51,18 @@ export class SpecManager {
 			return;
 		}
 
-		// Show notification immediately after user input
-		NotificationUtils.showAutoDismissNotification(
-			"Codex is creating your spec. Check the terminal for progress."
-		);
-
-		// Let Codex handle everything - directory creation, naming, and file creation
-		// Load and render the spec creation prompt
+		// Render the spec creation prompt for chat
 		const prompt = this.promptLoader.renderPrompt("create-spec", {
 			description,
 			workspacePath: workspaceFolder.uri.fsPath,
 			specBasePath: this.getSpecBasePath(),
 		});
 
-		// Send to Codex and get the terminal
-		const terminal = await this.codexProvider.invokeCodexSplitView(
-			prompt,
-			"KFC - Creating Spec"
+		await sendPromptToChat(prompt);
+
+		NotificationUtils.showAutoDismissNotification(
+			"Sent the spec creation prompt to ChatGPT. Continue the flow there."
 		);
-
-		// Set up automatic terminal renaming when spec folder is created
-		this.setupSpecFolderWatcher(workspaceFolder, terminal);
-	}
-
-	/**
-	 * Set up a file system watcher to automatically rename the terminal
-	 * when a new spec folder is created
-	 */
-
-	// biome-ignore lint/suspicious/useAwait: ignore
-	private async setupSpecFolderWatcher(
-		workspaceFolder: WorkspaceFolder,
-		terminal: Terminal
-	): Promise<void> {
-		// Create watcher for new folders in the specs directory
-		const watcher = workspace.createFileSystemWatcher(
-			new RelativePattern(workspaceFolder, `${this.getSpecBasePath()}/*`),
-			false, // Watch for creates
-			true, // Ignore changes
-			true // Ignore deletes
-		);
-
-		let disposed = false;
-
-		// Handle folder creation
-		const disposable = watcher.onDidCreate(async (uri) => {
-			if (disposed) {
-				return;
-			}
-
-			// Validate it's a directory
-			try {
-				const stats = await workspace.fs.stat(uri);
-				if (stats.type !== FileType.Directory) {
-					this.outputChannel.appendLine(
-						`[SpecManager] Skipping non-directory: ${uri.fsPath}`
-					);
-					return;
-				}
-			} catch (error) {
-				this.outputChannel.appendLine(
-					`[SpecManager] Error checking path: ${error}`
-				);
-				return;
-			}
-
-			const specName = basename(uri.fsPath);
-			this.outputChannel.appendLine(
-				`[SpecManager] New spec detected: ${specName}`
-			);
-			try {
-				await this.codexProvider.renameTerminal(terminal, `Spec: ${specName}`);
-			} catch (error) {
-				this.outputChannel.appendLine(
-					`[SpecManager] Failed to rename terminal: ${error}`
-				);
-			}
-
-			// Clean up after successful rename
-			this.disposeWatcher(disposable, watcher);
-			disposed = true;
-		});
-
-		// Auto-cleanup after timeout
-		setTimeout(() => {
-			if (!disposed) {
-				this.outputChannel.appendLine(
-					"[SpecManager] Watcher timeout - cleaning up"
-				);
-				this.disposeWatcher(disposable, watcher);
-				disposed = true;
-			}
-			// biome-ignore lint/style/noMagicNumbers: ignore
-		}, 60_000); // 60 seconds timeout
-	}
-
-	/**
-	 * Dispose watcher and its event handler
-	 */
-	private disposeWatcher(
-		disposable: Disposable,
-		watcher: FileSystemWatcher
-	): void {
-		disposable.dispose();
-		watcher.dispose();
-		this.outputChannel.appendLine("[SpecManager] Watcher disposed");
 	}
 
 	async navigateToDocument(specName: string, type: SpecDocumentType) {
@@ -299,16 +199,16 @@ This document has not been created yet.`;
 		}
 
 		// Show notification immediately after user input
-		NotificationUtils.showAutoDismissNotification(
-			"Codex is implementing your task. Check the terminal for progress."
-		);
-
 		const prompt = this.promptLoader.renderPrompt("impl-task", {
 			taskFilePath,
 			taskDescription,
 			workingDirectory: workspaceFolder.uri.fsPath,
 		});
 
-		await this.codexProvider.executePlan(prompt);
+		await sendPromptToChat(prompt);
+
+		NotificationUtils.showAutoDismissNotification(
+			"Sent the implementation task prompt to ChatGPT. Follow up there."
+		);
 	}
 }

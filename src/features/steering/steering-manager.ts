@@ -13,6 +13,8 @@ import type { CodexProvider } from "../../providers/codex-provider";
 import { PromptLoader } from "../../services/prompt-loader";
 import { ConfigManager } from "../../utils/config-manager";
 import { NotificationUtils } from "../../utils/notification-utils";
+import { sendPromptToChat } from "../../utils/chat-prompt-runner";
+import { addDocumentToCodexChat } from "../../utils/codex-chat-utils";
 
 export class SteeringManager {
 	private readonly configManager: ConfigManager;
@@ -62,20 +64,15 @@ export class SteeringManager {
 			// Ensure directory exists
 			await workspace.fs.createDirectory(Uri.file(steeringPath));
 
-			// Let Codex decide the filename based on the description
 			const prompt = this.promptLoader.renderPrompt("create-custom-steering", {
 				description,
 				steeringPath: this.getSteeringBasePath(),
 			});
 
-			await this.codexProvider.invokeCodexSplitView(
-				prompt,
-				"KFC - Create Steering"
-			);
+			await sendPromptToChat(prompt);
 
-			// Show auto-dismiss notification
 			await NotificationUtils.showAutoDismissNotification(
-				"Codex is creating a steering document based on your needs. Check the terminal for progress."
+				"Sent the steering creation prompt to ChatGPT. Continue the conversation there."
 			);
 		} catch (error) {
 			window.showErrorMessage(`Failed to create steering document: ${error}`);
@@ -157,11 +154,11 @@ export class SteeringManager {
 		);
 		await workspace.fs.createDirectory(Uri.file(steeringPath));
 
-		// Generate steering documents using Codex
+		// Generate steering documents via chat
 		await window.withProgress(
 			{
 				location: ProgressLocation.Notification,
-				title: "Analyzing project and generating steering documents...",
+				title: "Preparing steering analysis prompt for ChatGPT...",
 				cancellable: false,
 			},
 			async () => {
@@ -169,14 +166,10 @@ export class SteeringManager {
 					steeringPath: this.getSteeringBasePath(),
 				});
 
-				await this.codexProvider.invokeCodexSplitView(
-					prompt,
-					"KFC - Init Steering"
-				);
+				await sendPromptToChat(prompt);
 
-				// Auto-dismiss notification after 3 seconds
 				await NotificationUtils.showAutoDismissNotification(
-					"Steering documents generation started. Check the terminal for progress."
+					"Sent the steering initialization prompt to ChatGPT. Review the chat for next steps."
 				);
 			}
 		);
@@ -188,15 +181,10 @@ export class SteeringManager {
 			filePath: uri.fsPath,
 		});
 
-		// Send to Codex
-		await this.codexProvider.invokeCodexSplitView(
-			prompt,
-			"KFC - Refine Steering"
-		);
+		await sendPromptToChat(prompt);
 
-		// Show auto-dismiss notification
 		await NotificationUtils.showAutoDismissNotification(
-			"Codex is refining the steering document. Check the terminal for progress."
+			"Sent the steering refinement prompt to ChatGPT. Continue collaborating there."
 		);
 	}
 
@@ -289,7 +277,6 @@ export class SteeringManager {
 		const document = await workspace.openTextDocument(filePath);
 		await window.showTextDocument(document);
 
-		// Auto-dismiss notification
 		await NotificationUtils.showAutoDismissNotification(
 			"Created global AGENTS.md.md file"
 		);
@@ -334,13 +321,19 @@ export class SteeringManager {
 			Buffer.from(initialContent)
 		);
 
-		// Open the file
 		const document = await workspace.openTextDocument(filePath);
-		await window.showTextDocument(document);
+		await window.showTextDocument(document, {
+			preview: false,
+			viewColumn: ViewColumn.Beside,
+		});
 
-		// Auto-dismiss notification
+		await addDocumentToCodexChat(document.uri, {
+			preview: false,
+			viewColumn: ViewColumn.Beside,
+		});
+
 		await NotificationUtils.showAutoDismissNotification(
-			"Created ~/.codex/config.toml"
+			"Shared ~/.codex/config.toml with ChatGPT. Continue editing together."
 		);
 	}
 
@@ -353,10 +346,10 @@ export class SteeringManager {
 				steeringPath: this.getSteeringBasePath(),
 			});
 
-			await this.codexProvider.executePlan(prompt);
+			await sendPromptToChat(prompt);
 
 			await NotificationUtils.showAutoDismissNotification(
-				"Codex is creating AGENTS.md configuration. Check the terminal for progress."
+				"Sent the AGENTS.md creation prompt to ChatGPT. Follow the conversation to finalize it."
 			);
 		} catch (error) {
 			window.showErrorMessage(`Failed to create AGENTS.md: ${error}`);
