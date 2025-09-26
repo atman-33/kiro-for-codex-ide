@@ -20,13 +20,13 @@ const { joinPath } = Uri;
 type TreeEventPayload = PromptItem | undefined | null | void;
 
 export class PromptsExplorerProvider implements TreeDataProvider<PromptItem> {
-	static readonly viewId = "vscode-extension-boilerplate.promptsExplorer";
+	static readonly viewId = "kiro-for-codex-ide.promptsExplorer";
 	static readonly createPromptCommandId =
-		"vscode-extension-boilerplate.promptsExplorer.createPrompt";
+		"kiro-for-codex-ide.promptsExplorer.createPrompt";
 	static readonly refreshCommandId =
-		"vscode-extension-boilerplate.promptsExplorer.refresh";
+		"kiro-for-codex-ide.promptsExplorer.refresh";
 	static readonly runPromptCommandId =
-		"vscode-extension-boilerplate.promptsExplorer.runPrompt";
+		"kiro-for-codex-ide.promptsExplorer.runPrompt";
 
 	private readonly changeEmitter = new EventEmitter<TreeEventPayload>();
 	readonly onDidChangeTreeData: Event<TreeEventPayload> =

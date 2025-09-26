@@ -4,21 +4,21 @@ import {
 	showInformationMessage,
 } from "./commands/sample-commands";
 import { InteractiveViewProvider } from "./providers/interactive-view-provider";
-import { SimpleViewProvider } from "./providers/simple-view-provider";
 import { PromptsExplorerProvider } from "./providers/prompts-explorer-provider";
+import { SimpleViewProvider } from "./providers/simple-view-provider";
 
 export const activate = (context: ExtensionContext) => {
 	// Register the commands
 	context.subscriptions.push(
 		commands.registerCommand(
-			"vscode-extension-boilerplate.showInformation",
+			"kiro-for-codex-ide.showInformation",
 			showInformationMessage
 		)
 	);
 
 	context.subscriptions.push(
 		commands.registerCommand(
-			"vscode-extension-boilerplate.reverseSelection",
+			"kiro-for-codex-ide.reverseSelection",
 			reverseSelection
 		)
 	);

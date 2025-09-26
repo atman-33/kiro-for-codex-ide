@@ -43,7 +43,7 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "vscode-extension-boilerplate",
+          "id": "kiro-for-codex-ide",
           "title": "VSCode Extension Boilerplate",
           "icon": "./icons/sample.svg"
         }
@@ -51,75 +51,75 @@
     },
     "commands": [
       {
-        "command": "vscode-extension-boilerplate.showInformation",
+        "command": "kiro-for-codex-ide.showInformation",
         "title": "Boilerplate: Show Information"
       },
       {
-        "command": "vscode-extension-boilerplate.reverseSelection",
+        "command": "kiro-for-codex-ide.reverseSelection",
         "title": "Boilerplate: Reverse Selection"
       },
       {
-        "command": "vscode-extension-boilerplate.promptsExplorer.createPrompt",
+        "command": "kiro-for-codex-ide.promptsExplorer.createPrompt",
         "title": "Prompts: Create Prompt"
       },
       {
-        "command": "vscode-extension-boilerplate.promptsExplorer.refresh",
+        "command": "kiro-for-codex-ide.promptsExplorer.refresh",
         "title": "Prompts: Refresh"
       },
       {
-        "command": "vscode-extension-boilerplate.promptsExplorer.runPrompt",
+        "command": "kiro-for-codex-ide.promptsExplorer.runPrompt",
         "title": "Prompts: Run Prompt"
       }
     ],
     "menus": {
       "commandPalette": [
         {
-          "command": "vscode-extension-boilerplate.showInformation",
+          "command": "kiro-for-codex-ide.showInformation",
           "when": "true"
         },
         {
-          "command": "vscode-extension-boilerplate.reverseSelection",
+          "command": "kiro-for-codex-ide.reverseSelection",
           "when": "editorHasSelection"
         }
       ],
       "view/title": [
         {
-          "command": "vscode-extension-boilerplate.promptsExplorer.createPrompt",
-          "when": "view == vscode-extension-boilerplate.promptsExplorer",
+          "command": "kiro-for-codex-ide.promptsExplorer.createPrompt",
+          "when": "view == kiro-for-codex-ide.promptsExplorer",
           "group": "navigation",
           "icon": "$(add)"
         },
         {
-          "command": "vscode-extension-boilerplate.promptsExplorer.refresh",
-          "when": "view == vscode-extension-boilerplate.promptsExplorer",
+          "command": "kiro-for-codex-ide.promptsExplorer.refresh",
+          "when": "view == kiro-for-codex-ide.promptsExplorer",
           "group": "navigation",
           "icon": "$(refresh)"
         }
       ],
       "view/item/context": [
         {
-          "command": "vscode-extension-boilerplate.promptsExplorer.runPrompt",
-          "when": "view == vscode-extension-boilerplate.promptsExplorer && viewItem == prompt",
+          "command": "kiro-for-codex-ide.promptsExplorer.runPrompt",
+          "when": "view == kiro-for-codex-ide.promptsExplorer && viewItem == prompt",
           "group": "inline"
         }
       ]
     },
     "views": {
-      "vscode-extension-boilerplate": [
+      "kiro-for-codex-ide": [
         {
-          "id": "vscode-extension-boilerplate.simpleView",
+          "id": "kiro-for-codex-ide.simpleView",
           "name": "Simple View",
           "type": "webview",
           "icon": ""
         },
         {
-          "id": "vscode-extension-boilerplate.interactiveView",
+          "id": "kiro-for-codex-ide.interactiveView",
           "name": "Interactive View",
           "type": "webview",
           "icon": ""
         },
         {
-          "id": "vscode-extension-boilerplate.promptsExplorer",
+          "id": "kiro-for-codex-ide.promptsExplorer",
           "name": "Prompts"
         }
       ]

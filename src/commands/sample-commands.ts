@@ -4,7 +4,7 @@ import { window } from "vscode";
  * Shows an information message.
  */
 export const showInformationMessage = () => {
-	window.showInformationMessage("Hello from vscode-extension-boilerplate!");
+	window.showInformationMessage("Hello from kiro-for-codex-ide!");
 };
 
 /**

@@ -21,7 +21,7 @@ export const getWebviewContent = (
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} data:; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
             <link href="${styleUri}" rel="stylesheet" />
-            <title>VSCode Extension Boilerplate</title>
+            <title>Kiro for Codex IDE</title>
         </head>
         <body>
             <div id="root" data-page="${page}"></div>
