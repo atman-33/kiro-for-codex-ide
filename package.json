@@ -22,8 +22,9 @@
   ],
   "scripts": {
     "install:all": "npm install && cd webview-ui && npm install",
+    "build-prompts": "node scripts/build-prompts.js",
     "build:ext": "esbuild src/extension.ts --bundle --platform=node --target=node16 --external:vscode --outfile=dist/extension.js",
-    "build": "npm run build:ext && npm run build:webview",
+    "build": "npm run build-prompts && npm run build:ext && npm run build:webview",
     "vscode:prepublish": "npm run build",
     "compile": "npm run build && npm run package",
     "watch": "concurrently \"tsc -w -p ./\" \"npm:watch:webview\"",
@@ -150,5 +151,9 @@
     "ultracite": "^5.4.4",
     "vitest": "^3.2.4",
     "vsce": "^2.15.0"
+  },
+  "dependencies": {
+    "gray-matter": "^4.0.3",
+    "handlebars": "^4.7.8"
   }
 }

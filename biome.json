@@ -12,6 +12,7 @@
       "webview-ui/src/**/*.ts",
       "webview-ui/src/**/*.tsx",
       "!node_modules/**/*",
+      "!src/prompts/target/**/*",
       "!webview-ui/src/components/ui/**/*.tsx",
       "!webview-ui/src/app.css",
       "!.tmp/**/*",
