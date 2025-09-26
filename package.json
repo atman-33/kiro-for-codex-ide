@@ -59,7 +59,7 @@
         "title": "Boilerplate: Reverse Selection"
       },
       {
-        "command": "kiro-for-codex-ide.promptsExplorer.createPrompt",
+        "command": "kiro-for-codex-ide.promptsExplorer.create",
         "title": "Prompts: Create Prompt",
         "icon": "$(plus)"
       },
@@ -70,7 +70,7 @@
         "icon": "$(refresh)"
       },
       {
-        "command": "kiro-for-codex-ide.promptsExplorer.runPrompt",
+        "command": "kiro-for-codex-ide.promptsExplorer.run",
         "title": "Prompts: Run Prompt",
         "category": "Kiro for Codex IDE",
         "icon": "$(play)"
@@ -89,7 +89,7 @@
       ],
       "view/title": [
         {
-          "command": "kiro-for-codex-ide.promptsExplorer.createPrompt",
+          "command": "kiro-for-codex-ide.promptsExplorer.create",
           "when": "view == kiro-for-codex-ide.promptsExplorer",
           "group": "navigation",
           "icon": "$(add)"
@@ -103,7 +103,7 @@
       ],
       "view/item/context": [
         {
-          "command": "kiro-for-codex-ide.promptsExplorer.runPrompt",
+          "command": "kiro-for-codex-ide.promptsExplorer.run",
           "when": "view == kiro-for-codex-ide.promptsExplorer && viewItem == prompt",
           "group": "inline",
           "icon": "$(play)"
