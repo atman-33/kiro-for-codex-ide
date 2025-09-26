@@ -21,12 +21,10 @@ const { joinPath } = Uri;
 type TreeEventPayload = PromptItem | undefined | null | void;
 
 export class PromptsExplorerProvider implements TreeDataProvider<PromptItem> {
-	static readonly viewId = "kiro-for-codex-ide.promptsExplorer";
-	static readonly createPromptCommandId =
-		"kiro-for-codex-ide.promptsExplorer.create";
-	static readonly refreshCommandId =
-		"kiro-for-codex-ide.promptsExplorer.refresh";
-	static readonly runPromptCommandId = "kiro-for-codex-ide.promptsExplorer.run";
+	static readonly viewId = "kiro-codex-ide.views.promptsExplorer";
+	static readonly createPromptCommandId = "kiro-codex-ide.prompts.create";
+	static readonly refreshCommandId = "kiro-codex-ide.prompts.refresh";
+	static readonly runPromptCommandId = "kiro-codex-ide.prompts.run";
 
 	private readonly changeEmitter = new EventEmitter<TreeEventPayload>();
 	readonly onDidChangeTreeData: Event<TreeEventPayload> =

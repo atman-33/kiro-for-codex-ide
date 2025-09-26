@@ -12,6 +12,12 @@ import {
 import type { SpecManager } from "../features/spec/spec-manager";
 
 export class SpecExplorerProvider implements TreeDataProvider<SpecItem> {
+	static readonly viewId = "kiro-codex-ide.views.specExplorer";
+	static readonly navigateRequirementsCommandId =
+		"kiro-codex-ide.spec.navigate.requirements";
+	static readonly navigateDesignCommandId =
+		"kiro-codex-ide.spec.navigate.design";
+	static readonly navigateTasksCommandId = "kiro-codex-ide.spec.navigate.tasks";
 	private readonly _onDidChangeTreeData: EventEmitter<
 		SpecItem | undefined | null | void
 	> = new EventEmitter<SpecItem | undefined | null | void>();
@@ -72,7 +78,7 @@ export class SpecExplorerProvider implements TreeDataProvider<SpecItem> {
 					element.specName!,
 					"requirements",
 					{
-						command: "kfc.spec.navigate.requirements",
+						command: SpecExplorerProvider.navigateRequirementsCommandId,
 						title: "Open Requirements",
 						arguments: [element.specName],
 					},
@@ -86,7 +92,7 @@ export class SpecExplorerProvider implements TreeDataProvider<SpecItem> {
 					element.specName!,
 					"design",
 					{
-						command: "kfc.spec.navigate.design",
+						command: SpecExplorerProvider.navigateDesignCommandId,
 						title: "Open Design",
 						arguments: [element.specName],
 					},
@@ -100,7 +106,7 @@ export class SpecExplorerProvider implements TreeDataProvider<SpecItem> {
 					element.specName!,
 					"tasks",
 					{
-						command: "kfc.spec.navigate.tasks",
+						command: SpecExplorerProvider.navigateTasksCommandId,
 						title: "Open Tasks",
 						arguments: [element.specName],
 					},

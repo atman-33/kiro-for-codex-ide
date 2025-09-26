@@ -6,7 +6,7 @@ import {
 	DEFAULT_VIEW_VISIBILITY,
 } from "../constants";
 
-export type KfcSettings = {
+export type KiroCodexIdeSettings = {
 	paths: {
 		specs: string;
 		steering: string;
@@ -15,15 +15,14 @@ export type KfcSettings = {
 	views: {
 		specs: { visible: boolean };
 		steering: { visible: boolean };
-		mcp: { visible: boolean };
-		hooks: { visible: boolean };
+		prompts: { visible: boolean };
 		settings: { visible: boolean };
 	};
 };
 
 export class ConfigManager {
 	private static instance: ConfigManager;
-	private settings: KfcSettings | null = null;
+	private settings: KiroCodexIdeSettings | null = null;
 	private readonly workspaceFolder: WorkspaceFolder | undefined;
 
 	// Internal constants
@@ -40,7 +39,7 @@ export class ConfigManager {
 		return ConfigManager.instance;
 	}
 
-	async loadSettings(): Promise<KfcSettings> {
+	async loadSettings(): Promise<KiroCodexIdeSettings> {
 		if (!this.workspaceFolder) {
 			return this.getDefaultSettings();
 		}
@@ -64,7 +63,7 @@ export class ConfigManager {
 		}
 	}
 
-	getSettings(): KfcSettings {
+	getSettings(): KiroCodexIdeSettings {
 		if (!this.settings) {
 			this.settings = this.getDefaultSettings();
 		}
@@ -87,20 +86,19 @@ export class ConfigManager {
 		return ConfigManager.TERMINAL_VENV_ACTIVATION_DELAY;
 	}
 
-	private getDefaultSettings(): KfcSettings {
+	private getDefaultSettings(): KiroCodexIdeSettings {
 		return {
 			paths: { ...DEFAULT_PATHS },
 			views: {
 				specs: { visible: DEFAULT_VIEW_VISIBILITY.specs },
 				steering: { visible: DEFAULT_VIEW_VISIBILITY.steering },
-				mcp: { visible: DEFAULT_VIEW_VISIBILITY.mcp },
-				hooks: { visible: DEFAULT_VIEW_VISIBILITY.hooks },
+				prompts: { visible: DEFAULT_VIEW_VISIBILITY.prompts },
 				settings: { visible: DEFAULT_VIEW_VISIBILITY.settings },
 			},
 		};
 	}
 
-	async saveSettings(settings: KfcSettings): Promise<void> {
+	async saveSettings(settings: KiroCodexIdeSettings): Promise<void> {
 		if (!this.workspaceFolder) {
 			throw new Error("No workspace folder found");
 		}

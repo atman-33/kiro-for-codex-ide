@@ -17,8 +17,7 @@ export const DEFAULT_CONFIG = {
 	views: {
 		specs: true,
 		steering: true,
-		mcp: true,
-		hooks: true,
+		prompts: true,
 		settings: false,
 	},
 } as const;

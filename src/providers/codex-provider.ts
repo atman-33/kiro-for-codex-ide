@@ -76,7 +76,7 @@ export class CodexProvider {
 	 */
 	async invokeCodexSplitView(
 		prompt: string,
-		title = "Kiro for Codex Code"
+		title = "Kiro for Codex IDE Code"
 	): Promise<Terminal> {
 		try {
 			// Create temp file with the prompt

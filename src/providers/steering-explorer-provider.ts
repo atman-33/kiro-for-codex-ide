@@ -17,6 +17,11 @@ import type { SteeringManager } from "../features/steering/steering-manager";
 export class SteeringExplorerProvider
 	implements TreeDataProvider<SteeringItem>
 {
+	static readonly viewId = "kiro-codex-ide.views.steeringExplorer";
+	static readonly createUserRuleCommandId =
+		"kiro-codex-ide.steering.createUserRule";
+	static readonly createProjectRuleCommandId =
+		"kiro-codex-ide.steering.createProjectRule";
 	private readonly _onDidChangeTreeData: EventEmitter<
 		SteeringItem | undefined | null | void
 	> = new EventEmitter<SteeringItem | undefined | null | void>();
@@ -128,7 +133,7 @@ export class SteeringExplorerProvider
 						"",
 						this.context,
 						{
-							command: "kfc.steering.createUserRule",
+							command: SteeringExplorerProvider.createUserRuleCommandId,
 							title: "Create Global AGENTS.md.md",
 						}
 					)
@@ -144,7 +149,7 @@ export class SteeringExplorerProvider
 						"",
 						this.context,
 						{
-							command: "kfc.steering.createProjectRule",
+							command: SteeringExplorerProvider.createProjectRuleCommandId,
 							title: "Create Project AGENTS.md.md",
 						}
 					)
