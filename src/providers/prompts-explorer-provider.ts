@@ -215,6 +215,7 @@ export class PromptsExplorerProvider implements TreeDataProvider<PromptItem> {
 }
 
 class PromptItem extends TreeItem {
+	readonly contextValue: string;
 	// biome-ignore lint/nursery/useMaxParams: ignore
 	constructor(
 		label: string,
@@ -224,6 +225,8 @@ class PromptItem extends TreeItem {
 		command?: Command
 	) {
 		super(label, collapsibleState);
+
+		this.contextValue = contextValue;
 
 		if (command) {
 			this.command = command;

@@ -60,15 +60,20 @@
       },
       {
         "command": "kiro-for-codex-ide.promptsExplorer.createPrompt",
-        "title": "Prompts: Create Prompt"
+        "title": "Prompts: Create Prompt",
+        "icon": "$(plus)"
       },
       {
         "command": "kiro-for-codex-ide.promptsExplorer.refresh",
-        "title": "Prompts: Refresh"
+        "title": "Prompts: Refresh",
+        "category": "Kiro for Codex IDE",
+        "icon": "$(refresh)"
       },
       {
         "command": "kiro-for-codex-ide.promptsExplorer.runPrompt",
-        "title": "Prompts: Run Prompt"
+        "title": "Prompts: Run Prompt",
+        "category": "Kiro for Codex IDE",
+        "icon": "$(play)"
       }
     ],
     "menus": {
@@ -100,7 +105,8 @@
         {
           "command": "kiro-for-codex-ide.promptsExplorer.runPrompt",
           "when": "view == kiro-for-codex-ide.promptsExplorer && viewItem == prompt",
-          "group": "inline"
+          "group": "inline",
+          "icon": "$(play)"
         }
       ]
     },
@@ -120,7 +126,8 @@
         },
         {
           "id": "kiro-for-codex-ide.promptsExplorer",
-          "name": "Prompts"
+          "name": "Prompts",
+          "icon": "terminal"
         }
       ]
     }
