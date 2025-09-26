@@ -12,6 +12,15 @@ import {
 import { VSC_CONFIG_NAMESPACE } from "../constants";
 import { ConfigManager } from "../utils/config-manager";
 
+export type CodexAvailabilityResult = {
+	isAvailable: boolean;
+	isInstalled: boolean;
+	version: string | null;
+	isCompatible: boolean;
+	errorMessage: string | null;
+	setupGuidance: string | null;
+};
+
 export class CodexProvider {
 	private readonly context: ExtensionContext;
 	private readonly outputChannel: OutputChannel;
@@ -259,5 +268,9 @@ export class CodexProvider {
 				// biome-ignore lint/style/noMagicNumbers: ignore
 			}, 100);
 		});
+	}
+
+	async executePlan(prompt: string): Promise<void> {
+		// TODO: Implement plan execution logic
 	}
 }

@@ -4,6 +4,7 @@ import {
 	commands,
 	type Event,
 	EventEmitter,
+	type ExtensionContext,
 	FileType,
 	ThemeIcon,
 	type TreeDataProvider,
@@ -31,6 +32,12 @@ export class PromptsExplorerProvider implements TreeDataProvider<PromptItem> {
 		this.changeEmitter.event;
 
 	private isLoading = false;
+
+	private readonly context: ExtensionContext;
+
+	constructor(context: ExtensionContext) {
+		this.context = context;
+	}
 
 	refresh = (): void => {
 		this.isLoading = true;

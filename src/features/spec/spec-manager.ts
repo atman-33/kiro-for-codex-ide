@@ -290,4 +290,25 @@ This document has not been created yet.`;
 			return [];
 		}
 	}
+
+	async implTask(taskFilePath: string, taskDescription: string) {
+		const workspaceFolder = workspace.workspaceFolders?.[0];
+		if (!workspaceFolder) {
+			window.showErrorMessage("No workspace folder open");
+			return;
+		}
+
+		// Show notification immediately after user input
+		NotificationUtils.showAutoDismissNotification(
+			"Codex is implementing your task. Check the terminal for progress."
+		);
+
+		const prompt = this.promptLoader.renderPrompt("impl-task", {
+			taskFilePath,
+			taskDescription,
+			workingDirectory: workspaceFolder.uri.fsPath,
+		});
+
+		await this.codexProvider.executePlan(prompt);
+	}
 }

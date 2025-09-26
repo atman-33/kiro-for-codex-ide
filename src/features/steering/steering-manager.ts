@@ -1,3 +1,4 @@
+import { homedir } from "os";
 import { join } from "path";
 import {
 	FileType,
@@ -292,5 +293,73 @@ export class SteeringManager {
 		await NotificationUtils.showAutoDismissNotification(
 			"Created global AGENTS.md.md file"
 		);
+	}
+	/**
+	 * Create global Codex configuration file (~/.codex/config.toml)
+	 */
+	async createUserConfiguration() {
+		const homeDir = homedir() || process.env.USERPROFILE || "";
+		const codexDir = join(homeDir, ".codex");
+		const filePath = join(codexDir, "config.toml");
+
+		// Ensure directory exists
+		try {
+			await workspace.fs.createDirectory(Uri.file(codexDir));
+		} catch (error) {
+			// Directory might already exist
+		}
+
+		// Check if file already exists
+		try {
+			await workspace.fs.stat(Uri.file(filePath));
+			const overwrite = await window.showWarningMessage(
+				"Global configuration file (~/.codex/config.toml) already exists. Overwrite?",
+				"Overwrite",
+				"Cancel"
+			);
+			if (overwrite !== "Overwrite") {
+				return;
+			}
+		} catch {
+			// File doesn't exist, continue
+		}
+
+		// Create initial TOML content for Codex CLI
+		const initialContent = `# Codex Global Configuration (TOML)
+# This file controls default behavior for Codex CLI across all projects.
+`;
+
+		await workspace.fs.writeFile(
+			Uri.file(filePath),
+			Buffer.from(initialContent)
+		);
+
+		// Open the file
+		const document = await workspace.openTextDocument(filePath);
+		await window.showTextDocument(document);
+
+		// Auto-dismiss notification
+		await NotificationUtils.showAutoDismissNotification(
+			"Created ~/.codex/config.toml"
+		);
+	}
+
+	/**
+	 * Create project-level AGENTS.md file using Codex CLI
+	 */
+	async createProjectDocumentation() {
+		try {
+			const prompt = this.promptLoader.renderPrompt("create-agents-md", {
+				steeringPath: this.getSteeringBasePath(),
+			});
+
+			await this.codexProvider.executePlan(prompt);
+
+			await NotificationUtils.showAutoDismissNotification(
+				"Codex is creating AGENTS.md configuration. Check the terminal for progress."
+			);
+		} catch (error) {
+			window.showErrorMessage(`Failed to create AGENTS.md: ${error}`);
+		}
 	}
 }
