@@ -55,7 +55,7 @@ export class SpecTaskCodeLensProvider implements CodeLensProvider {
 				const codeLens = new CodeLens(range, {
 					title: "$(play) Start Task",
 					tooltip: "Click to execute this task",
-					command: "kiroCodex.spec.implTask",
+					command: "kiro-codex-ide.spec.implTask",
 					arguments: [document.uri, i, taskDescription],
 				});
 
