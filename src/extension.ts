@@ -5,6 +5,7 @@ import {
 } from "./commands/sample-commands";
 import { InteractiveViewProvider } from "./providers/interactive-view-provider";
 import { SimpleViewProvider } from "./providers/simple-view-provider";
+import { PromptsExplorerProvider } from "./providers/prompts-explorer-provider";
 
 export const activate = (context: ExtensionContext) => {
 	// Register the commands
@@ -31,6 +32,34 @@ export const activate = (context: ExtensionContext) => {
 		)
 	);
 
+	const promptsExplorerProvider = new PromptsExplorerProvider();
+	context.subscriptions.push(
+		window.registerTreeDataProvider(
+			PromptsExplorerProvider.viewId,
+			promptsExplorerProvider
+		)
+	);
+
+	context.subscriptions.push(
+		commands.registerCommand(
+			PromptsExplorerProvider.refreshCommandId,
+			promptsExplorerProvider.refresh
+		)
+	);
+
+	context.subscriptions.push(
+		commands.registerCommand(
+			PromptsExplorerProvider.createPromptCommandId,
+			promptsExplorerProvider.createPrompt
+		)
+	);
+
+	context.subscriptions.push(
+		commands.registerCommand(
+			PromptsExplorerProvider.runPromptCommandId,
+			promptsExplorerProvider.runPrompt
+		)
+	);
 	const interactiveViewProvider = new InteractiveViewProvider(
 		context.extensionUri
 	);

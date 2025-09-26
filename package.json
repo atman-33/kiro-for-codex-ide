@@ -1,6 +1,6 @@
 {
-  "name": "vscode-extension-boilerplate",
-  "displayName": "VSCode Extension Boilerplate",
+  "name": "kiro-for-codex-ide",
+  "displayName": "Kiro for Codex IDE",
   "description": "",
   "version": "0.1.0",
   "author": "atman-33",
@@ -8,7 +8,7 @@
   "icon": "icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/atman-33/vscode-extension-boilerplate"
+    "url": "https://github.com/atman-33/kiro-for-codex-ide"
   },
   "engines": {
     "vscode": "^1.84.0"
@@ -57,6 +57,18 @@
       {
         "command": "vscode-extension-boilerplate.reverseSelection",
         "title": "Boilerplate: Reverse Selection"
+      },
+      {
+        "command": "vscode-extension-boilerplate.promptsExplorer.createPrompt",
+        "title": "Prompts: Create Prompt"
+      },
+      {
+        "command": "vscode-extension-boilerplate.promptsExplorer.refresh",
+        "title": "Prompts: Refresh"
+      },
+      {
+        "command": "vscode-extension-boilerplate.promptsExplorer.runPrompt",
+        "title": "Prompts: Run Prompt"
       }
     ],
     "menus": {
@@ -68,6 +80,27 @@
         {
           "command": "vscode-extension-boilerplate.reverseSelection",
           "when": "editorHasSelection"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "vscode-extension-boilerplate.promptsExplorer.createPrompt",
+          "when": "view == vscode-extension-boilerplate.promptsExplorer",
+          "group": "navigation",
+          "icon": "$(add)"
+        },
+        {
+          "command": "vscode-extension-boilerplate.promptsExplorer.refresh",
+          "when": "view == vscode-extension-boilerplate.promptsExplorer",
+          "group": "navigation",
+          "icon": "$(refresh)"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "vscode-extension-boilerplate.promptsExplorer.runPrompt",
+          "when": "view == vscode-extension-boilerplate.promptsExplorer && viewItem == prompt",
+          "group": "inline"
         }
       ]
     },
@@ -84,6 +117,10 @@
           "name": "Interactive View",
           "type": "webview",
           "icon": ""
+        },
+        {
+          "id": "vscode-extension-boilerplate.promptsExplorer",
+          "name": "Prompts"
         }
       ]
     }
