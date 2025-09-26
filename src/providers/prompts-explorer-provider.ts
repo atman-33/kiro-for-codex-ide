@@ -14,6 +14,7 @@ import {
 	workspace,
 } from "vscode";
 import { PROMPTS_DIR } from "../constants";
+import { addDocumentToCodexChat } from "../utils/codex-chat-utils";
 
 const { joinPath } = Uri;
 
@@ -114,9 +115,15 @@ export class PromptsExplorerProvider implements TreeDataProvider<PromptItem> {
 			return;
 		}
 
-		await window.showInformationMessage(
-			`Run Prompt placeholder for ${item.label}. Implementation pending.`
-		);
+		try {
+			await addDocumentToCodexChat(item.resourceUri);
+		} catch (error) {
+			const message =
+				error instanceof Error
+					? `Failed to run prompt: ${error.message}`
+					: "Failed to run prompt.";
+			await window.showErrorMessage(message);
+		}
 	};
 
 	getTreeItem = (element: PromptItem): TreeItem => element;
