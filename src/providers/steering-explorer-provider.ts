@@ -14,6 +14,8 @@ import {
 } from "vscode";
 import type { SteeringManager } from "../features/steering/steering-manager";
 
+import { homedir } from "os";
+
 export class SteeringExplorerProvider
 	implements TreeDataProvider<SteeringItem>
 {
@@ -54,7 +56,9 @@ export class SteeringExplorerProvider
 			const items: SteeringItem[] = [];
 
 			// Check existence of files
-			const globalCodexMd = join(process.env.HOME || "", ".codex", "AGENTS.md");
+			const homeDir =
+				homedir() || process.env.USERPROFILE || process.env.HOME || "";
+			const globalCodexMd = join(homeDir, ".codex", "AGENTS.md");
 			const globalExists = existsSync(globalCodexMd);
 
 			let projectCodexMd = "";

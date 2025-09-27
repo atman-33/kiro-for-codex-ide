@@ -240,7 +240,9 @@ export class SteeringManager {
 	 * Create global AGENTS.md file in user's home directory
 	 */
 	async createUserCodexMd() {
-		const codexDir = join(process.env.HOME || "", ".codex");
+		const homeDir =
+			homedir() || process.env.USERPROFILE || process.env.HOME || "";
+		const codexDir = join(homeDir, ".codex");
 		const filePath = join(codexDir, "AGENTS.md");
 
 		// Ensure directory exists
