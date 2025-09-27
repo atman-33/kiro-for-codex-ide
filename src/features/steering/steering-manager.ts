@@ -221,7 +221,7 @@ export class SteeringManager {
 	// biome-ignore lint/suspicious/useAwait: ignore
 	async createProjectCodexMd() {
 		const terminal = window.createTerminal({
-			name: "Codex Code - Init",
+			name: "Codex - Init",
 			cwd: workspace.workspaceFolders?.[0]?.uri.fsPath,
 			location: {
 				viewColumn: ViewColumn.Two,
@@ -240,7 +240,9 @@ export class SteeringManager {
 	 * Create global AGENTS.md file in user's home directory
 	 */
 	async createUserCodexMd() {
-		const codexDir = join(process.env.HOME || "", ".codex");
+		const homeDir =
+			homedir() || process.env.USERPROFILE || process.env.HOME || "";
+		const codexDir = join(homeDir, ".codex");
 		const filePath = join(codexDir, "AGENTS.md");
 
 		// Ensure directory exists
