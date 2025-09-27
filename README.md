@@ -7,6 +7,8 @@
 
 A VS Code extension that brings spec-driven development to Codex CLI, leveraging the powerful AI capabilities of the [VS Code Codex extension](https://marketplace.visualstudio.com/items?itemName=openai.chatgpt). Manage your specs, steering documents, and custom prompts visually.
 
+![Create new Spec](./screenshots/image.png)
+
 ## Feature Overview
 
 ### 📝 Spec Management
