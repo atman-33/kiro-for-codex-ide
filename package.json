@@ -1,7 +1,7 @@
 {
   "name": "kiro-for-codex-ide",
   "displayName": "Kiro for Codex IDE",
-  "description": "",
+  "description": "Spec-driven development with Codex CLI - inspired by Kiro",
   "version": "0.1.0",
   "author": "atman-33",
   "publisher": "atman-dev",
@@ -13,7 +13,11 @@
   "engines": {
     "vscode": "^1.84.0"
   },
-  "categories": [],
+  "categories": [
+    "AI",
+    "Programming Languages",
+    "Other"
+  ],
   "activationEvents": [],
   "main": "dist/extension.js",
   "extensionKind": [
