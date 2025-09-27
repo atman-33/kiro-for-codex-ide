@@ -8,7 +8,7 @@ import type {
 import { getWebviewContent } from "../utils/get-webview-content";
 
 export class InteractiveViewProvider implements WebviewViewProvider {
-	static readonly viewId = "vscode-extension-boilerplate.interactiveView";
+	static readonly viewId = "kiro-for-codex-ide.interactiveView";
 
 	private _view?: WebviewView;
 	private readonly _extensionUri: Uri;

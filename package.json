@@ -1,19 +1,23 @@
 {
-  "name": "vscode-extension-boilerplate",
-  "displayName": "VSCode Extension Boilerplate",
-  "description": "",
+  "name": "kiro-for-codex-ide",
+  "displayName": "Kiro for Codex IDE",
+  "description": "Spec-driven development with Codex CLI - inspired by Kiro",
   "version": "0.1.0",
   "author": "atman-33",
   "publisher": "atman-dev",
   "icon": "icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/atman-33/vscode-extension-boilerplate"
+    "url": "https://github.com/atman-33/kiro-for-codex-ide"
   },
   "engines": {
     "vscode": "^1.84.0"
   },
-  "categories": [],
+  "categories": [
+    "AI",
+    "Programming Languages",
+    "Other"
+  ],
   "activationEvents": [],
   "main": "dist/extension.js",
   "extensionKind": [
@@ -22,8 +26,9 @@
   ],
   "scripts": {
     "install:all": "npm install && cd webview-ui && npm install",
+    "build-prompts": "node scripts/build-prompts.js",
     "build:ext": "esbuild src/extension.ts --bundle --platform=node --target=node16 --external:vscode --outfile=dist/extension.js",
-    "build": "npm run build:ext && npm run build:webview",
+    "build": "npm run build-prompts && npm run build:ext && npm run build:webview",
     "vscode:prepublish": "npm run build",
     "compile": "npm run build && npm run package",
     "watch": "concurrently \"tsc -w -p ./\" \"npm:watch:webview\"",
@@ -40,50 +45,277 @@
     "watch:webview": "npm --prefix webview-ui run dev"
   },
   "contributes": {
+    "configuration": {
+      "title": "Kiro for Codex IDE",
+      "properties": {
+        "kiro-codex-ide.views.specs.visible": {
+          "type": "boolean",
+          "default": true,
+          "description": "Controls visibility of the Specs view in the activity bar."
+        },
+        "kiro-codex-ide.views.steering.visible": {
+          "type": "boolean",
+          "default": true,
+          "description": "Controls visibility of the Steering view in the activity bar."
+        },
+        "kiro-codex-ide.views.prompts.visible": {
+          "type": "boolean",
+          "default": true,
+          "description": "Controls visibility of the Prompts view in the activity bar."
+        },
+        "kiro-codex-ide.views.settings.visible": {
+          "type": "boolean",
+          "default": true,
+          "description": "Controls visibility of the Settings view in the activity bar."
+        },
+        "kiro-codex-ide.codex.specsPath": {
+          "type": "string",
+          "default": ".codex/specs",
+          "description": "Path where Codex specification files are stored."
+        },
+        "kiro-codex-ide.codex.promptsPath": {
+          "type": "string",
+          "default": ".codex/prompts",
+          "description": "Path where Codex prompt files are stored."
+        },
+        "kiro-codex-ide.codex.steeringPath": {
+          "type": "string",
+          "default": ".codex/steering",
+          "description": "Path where Codex steering documents are stored."
+        }
+      }
+    },
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "vscode-extension-boilerplate",
-          "title": "VSCode Extension Boilerplate",
-          "icon": "./icons/sample.svg"
-        }
-      ]
-    },
-    "commands": [
-      {
-        "command": "vscode-extension-boilerplate.showInformation",
-        "title": "Boilerplate: Show Information"
-      },
-      {
-        "command": "vscode-extension-boilerplate.reverseSelection",
-        "title": "Boilerplate: Reverse Selection"
-      }
-    ],
-    "menus": {
-      "commandPalette": [
-        {
-          "command": "vscode-extension-boilerplate.showInformation",
-          "when": "true"
-        },
-        {
-          "command": "vscode-extension-boilerplate.reverseSelection",
-          "when": "editorHasSelection"
+          "id": "kiro-codex-ide",
+          "title": "Kiro for Codex IDE",
+          "icon": "./icons/kiro.svg"
         }
       ]
     },
     "views": {
-      "vscode-extension-boilerplate": [
+      "kiro-codex-ide": [
         {
-          "id": "vscode-extension-boilerplate.simpleView",
-          "name": "Simple View",
-          "type": "webview",
-          "icon": ""
+          "id": "kiro-codex-ide.views.specExplorer",
+          "name": "Specs",
+          "icon": "symbol-structure",
+          "when": "!(workbenchState == empty || workspaceFolderCount == 0) && config.kiro-codex-ide.views.specs.visible"
         },
         {
-          "id": "vscode-extension-boilerplate.interactiveView",
-          "name": "Interactive View",
-          "type": "webview",
-          "icon": ""
+          "id": "kiro-codex-ide.views.steeringExplorer",
+          "name": "Steering",
+          "icon": "symbol-parameter",
+          "when": "!(workbenchState == empty || workspaceFolderCount == 0) && config.kiro-codex-ide.views.steering.visible"
+        },
+        {
+          "id": "kiro-codex-ide.views.promptsExplorer",
+          "name": "Prompts",
+          "icon": "terminal",
+          "when": "!(workbenchState == empty || workspaceFolderCount == 0) && config.kiro-codex-ide.views.prompts.visible"
+        },
+        {
+          "id": "kiro-codex-ide.views.overview",
+          "name": "Settings",
+          "icon": "gear",
+          "visibility": "collapsed",
+          "when": "!(workbenchState == empty || workspaceFolderCount == 0) && config.kiro-codex-ide.views.settings.visible"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "kiro-codex-ide.views.specExplorer",
+        "contents": "Plan features with Specs\n\n[$(plus) Create New Spec](command:kiro-codex-ide.spec.create)"
+      },
+      {
+        "view": "kiro-codex-ide.views.steeringExplorer",
+        "contents": "[$(globe) Create User Rule](command:kiro-codex-ide.steering.createUserRule)\n\n[$(root-folder) Create Project Rule](command:kiro-codex-ide.steering.createProjectRule)"
+      },
+      {
+        "view": "kiro-codex-ide.views.promptsExplorer",
+        "contents": "Create and run prompts (.md) under .codex/prompts\n\n[$(plus) Create Prompt](command:kiro-codex-ide.prompts.create)\n[$(refresh) Refresh](command:kiro-codex-ide.prompts.refresh)"
+      },
+      {
+        "view": "kiro-codex-ide.views.overview",
+        "contents": "Configure Kiro for Codex IDE\n\n[$(gear) Open Settings](command:kiro-codex-ide.settings.open)\n[$(question) Help](command:kiro-codex-ide.help.open)"
+      }
+    ],
+    "commands": [
+      {
+        "command": "kiro-codex-ide.spec.create",
+        "title": "Create New Spec",
+        "category": "Kiro for Codex IDE",
+        "icon": "$(plus)"
+      },
+      {
+        "command": "kiro-codex-ide.spec.refresh",
+        "title": "Refresh Specs",
+        "category": "Kiro for Codex IDE",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "kiro-codex-ide.spec.delete",
+        "title": "Delete Spec",
+        "category": "Kiro for Codex IDE",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "kiro-codex-ide.spec.implTask",
+        "title": "Implement Task",
+        "category": "Kiro for Codex IDE"
+      },
+      {
+        "command": "kiro-codex-ide.steering.create",
+        "title": "Create Custom Steering",
+        "category": "Kiro for Codex IDE",
+        "icon": "$(plus)"
+      },
+      {
+        "command": "kiro-codex-ide.steering.generateInitial",
+        "title": "Init Steering",
+        "category": "Kiro for Codex IDE",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "kiro-codex-ide.steering.refine",
+        "title": "Refine Steering",
+        "category": "Kiro for Codex IDE",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "kiro-codex-ide.steering.delete",
+        "title": "Delete Steering",
+        "category": "Kiro for Codex IDE",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "kiro-codex-ide.steering.refresh",
+        "title": "Refresh Steering",
+        "category": "Kiro for Codex IDE",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "kiro-codex-ide.steering.createUserRule",
+        "title": "Create User Rule",
+        "category": "Kiro for Codex IDE",
+        "icon": "$(globe)"
+      },
+      {
+        "command": "kiro-codex-ide.steering.createProjectRule",
+        "title": "Create Project Rule",
+        "category": "Kiro for Codex IDE",
+        "icon": "$(root-folder)"
+      },
+      {
+        "command": "kiro-codex-ide.prompts.create",
+        "title": "Create Prompt",
+        "category": "Kiro for Codex IDE",
+        "icon": "$(plus)"
+      },
+      {
+        "command": "kiro-codex-ide.prompts.refresh",
+        "title": "Refresh Prompts",
+        "category": "Kiro for Codex IDE",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "kiro-codex-ide.prompts.run",
+        "title": "Run Prompt",
+        "category": "Kiro for Codex IDE",
+        "icon": "$(play)"
+      },
+      {
+        "command": "kiro-codex-ide.settings.open",
+        "title": "Kiro Settings",
+        "category": "Kiro for Codex IDE",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "kiroCodex.help.open",
+        "title": "Kiro Help",
+        "category": "Kiro for Codex",
+        "icon": "$(question)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "kiro-codex-ide.spec.create",
+          "when": "view == kiro-codex-ide.views.specExplorer",
+          "group": "navigation@1"
+        },
+        {
+          "command": "kiro-codex-ide.spec.refresh",
+          "when": "view == kiro-codex-ide.views.specExplorer",
+          "group": "navigation@2"
+        },
+        {
+          "command": "kiro-codex-ide.steering.create",
+          "when": "view == kiro-codex-ide.views.steeringExplorer",
+          "group": "navigation@1"
+        },
+        {
+          "command": "kiro-codex-ide.steering.generateInitial",
+          "when": "view == kiro-codex-ide.views.steeringExplorer",
+          "group": "navigation@2"
+        },
+        {
+          "command": "kiro-codex-ide.steering.refresh",
+          "when": "view == kiro-codex-ide.views.steeringExplorer",
+          "group": "navigation@3"
+        },
+        {
+          "command": "kiro-codex-ide.prompts.create",
+          "when": "view == kiro-codex-ide.views.promptsExplorer",
+          "group": "navigation@1"
+        },
+        {
+          "command": "kiro-codex-ide.prompts.refresh",
+          "when": "view == kiro-codex-ide.views.promptsExplorer",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "kiro-codex-ide.spec.delete",
+          "when": "view == kiro-codex-ide.views.specExplorer && viewItem == spec",
+          "group": "7_modification"
+        },
+        {
+          "command": "kiro-codex-ide.prompts.run",
+          "when": "view == kiro-codex-ide.views.promptsExplorer && viewItem == prompt",
+          "group": "inline"
+        },
+        {
+          "command": "kiro-codex-ide.steering.refine",
+          "when": "view == kiro-codex-ide.views.steeringExplorer && viewItem == steering-document",
+          "group": "inline"
+        },
+        {
+          "command": "kiro-codex-ide.steering.delete",
+          "when": "view == kiro-codex-ide.views.steeringExplorer && viewItem == steering-document",
+          "group": "7_modification"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "kiro-codex-ide.spec.create"
+        },
+        {
+          "command": "kiro-codex-ide.steering.create",
+          "when": "workspaceFolderCount > 0"
+        },
+        {
+          "command": "kiro-codex-ide.steering.generateInitial",
+          "when": "workspaceFolderCount > 0"
+        },
+        {
+          "command": "kiro-codex-ide.steering.refresh"
+        },
+        {
+          "command": "kiro-codex-ide.prompts.create",
+          "when": "workspaceFolderCount > 0"
         }
       ]
     }
@@ -106,5 +338,9 @@
     "ultracite": "^5.4.4",
     "vitest": "^3.2.4",
     "vsce": "^2.15.0"
+  },
+  "dependencies": {
+    "gray-matter": "^4.0.3",
+    "handlebars": "^4.7.8"
   }
 }

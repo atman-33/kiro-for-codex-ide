@@ -11,7 +11,12 @@
       "tests/**/*.ts",
       "webview-ui/src/**/*.ts",
       "webview-ui/src/**/*.tsx",
-      "!webview-ui/src/components/ui/**/*.tsx"
+      "!node_modules/**/*",
+      "!src/prompts/target/**/*",
+      "!webview-ui/src/components/ui/**/*.tsx",
+      "!webview-ui/src/app.css",
+      "!.tmp/**/*",
+      "!.codex/**/*"
     ],
     "ignoreUnknown": false
   },
@@ -57,7 +62,5 @@
       }
     }
   },
-  "extends": [
-    "ultracite"
-  ]
+  "extends": ["ultracite"]
 }

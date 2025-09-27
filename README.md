@@ -1,124 +1,136 @@
-# VSCode Extension Boilerplate (React + TypeScript + Vite)
+# Kiro for Codex IDE
 
-A ready-to-use boilerplate for building VSCode extensions with a React-based WebView UI, written in TypeScript, and bundled with Vite and esbuild.
+[![Visual Studio Marketplace](https://img.shields.io/vscode-marketplace/v/atman-dev.kiro-for-codex-ide.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=atman-dev.kiro-for-codex-ide)
+[![Downloads](https://img.shields.io/vscode-marketplace/d/atman-dev.kiro-for-codex-ide.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=atman-dev.kiro-for-codex-ide)
+[![GitHub stars](https://img.shields.io/github/stars/atman-33/kiro-for-codex-ide.svg?style=flat-square)](https://github.com/atman-33/kiro-for-codex-ide/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/atman-33/kiro-for-codex-ide.svg?style=flat-square)](https://github.com/atman-33/kiro-for-codex-ide/issues)
 
-This boilerplate provides a clean foundation with essential features already set up, allowing you to focus on building your extension's unique functionality.
+A VS Code extension that brings spec-driven development to Codex CLI, leveraging the powerful AI capabilities of the [VS Code Codex extension](https://marketplace.visualstudio.com/items?itemName=openai.chatgpt). Manage your specs, steering documents, and custom prompts visually.
 
-![image](./screenshots/image.png)
+![Create new Spec](./screenshots/image.png)
 
-## Features
+## Feature Overview
 
--   **Extension & WebView:** A clear separation between the extension's backend logic and the WebView UI.
--   **React + TypeScript:** Build your UI with modern web technologies.
--   **Vite for WebViews:** Fast and efficient bundling for the WebView UI.
--   **esbuild for Extension:** Quick and lightweight bundling for the extension's main process.
--   **Sample Commands:** Includes basic commands to demonstrate functionality.
-    -   `Boilerplate: Show Information`: Displays a simple information message.
-    -   `Boilerplate: Reverse Selection`: Reverses the currently selected text in the editor.
--   **Sample WebViews:**
-    -   **Simple View:** A static WebView that displays text and an image.
-    -   **Interactive View:** A WebView that demonstrates two-way communication between the UI and the extension.
--   **Theming:** The WebView UI uses VS Code's theme variables for a consistent look and feel.
--   **Testing:** Pre-configured with Vitest for unit and integration testing.
--   **Linting & Formatting:** Integrated with Biome for code quality.
+### 📝 Spec Management
 
-## Tech Stack
+- Run `Kiro for Codex IDE: Create New Spec` (`kiro-codex-ide.spec.create`) to launch the guided prompt. This will pass the context to the VS Code Codex extension's chat, where you can interact to create the spec.
+- Browse generated specs in the **Specs** view; each spec exposes Requirements, Design, and Tasks nodes with quick-open commands.
+- Execute individual checklist items from `tasks.md` via the "Start Task" CodeLens, which marks the checklist and passes the task context to the VS Code Codex extension's chat. You can then interact with the chat to execute the task.
 
-- VS Code Extension runtime powered by TypeScript and the VS Code API.
-- Extension bundling handled by esbuild with incremental rebuild support.
-- Webview UI built with React 18 + TypeScript and bundled via Vite.
-- Styling composed with Tailwind-style utility classes defined in `webview-ui/src/app.css`.
-- Quality tooling through Vitest (testing) and Biome (linting/formatting).
+### 🎯 Steering Management
 
-## Key Packages
+- The **Steering** view surfaces global (`~/.codex/AGENTS.md`) and project-level (`AGENTS.md`) rules and lets you open them instantly.
+- Use the built-in commands to create global or project rules, initialize steering documents, refine existing files, or delete outdated guidance. These actions will pass the relevant context to the VS Code Codex extension's chat, allowing you to interact and manage your steering documents.
 
-- `esbuild`: bundles the extension runtime from `src/extension.ts` into `dist/extension.js`.
-- `ultracite`: wraps Biome to apply the shared lint/format/check commands defined in project scripts.
-- `@biomejs/biome`: delivers linting and formatting rules enforced across the monorepo.
-- `vitest`: executes unit and integration tests for both extension and webview layers.
-- `husky`: manages Git hooks to enforce linting and testing before commits.
-- `tailwindcss`: provides the utility-first styling primitives referenced through `webview-ui/src/app.css`.
-- `class-variance-authority`: centralizes Tailwind class variants for consistent UI theming.
-- `shadcn/ui`: ships reusable headless UI components consumed from `webview-ui/src/components/ui`.
-- `@radix-ui/react-slot`: underpins the composable primitives used by the shadcn/ui component layer.
+### 🧩 Prompts
+- Maintain Markdown prompts under `.codex/prompts` (default paths configurable). 
+- Create prompts from the tree view; the extension scaffolds the file and opens it for editing.
+- Run prompts from the inline action or the command palette, which passes the document as context to the Codex Chat provided by the VS Code Codex extension.
 
-## Project Structure
-
-```
-.
-├── src/                          # Extension source code
-│   ├── commands/                 # Sample command implementations
-│   ├── providers/                # WebView providers
-│   ├── utils/                    # Utility functions
-│   └── extension.ts              # Main extension entry point
-├── webview-ui/                   # WebView UI source code (React + Vite)
-│   ├── src/
-│   │   ├── components/           # React components for the views
-│   │   ├── bridge/               # Communication bridge to VSCode
-│   │   └── index.tsx             # UI entry point
-│   └── vite.config.ts            # Vite configuration
-├── package.json                  # Extension manifest and dependencies
-└── ...
-```
-
-## Getting Started
+## Installation
 
 ### Prerequisites
+- Codex CLI 0.28.0 or later available on `PATH`.
+- Visual Studio Code 1.84.0 or newer.
+- Node.js 16+ for local builds.
+- **[VS Code Codex extension](https://marketplace.visualstudio.com/items?itemName=openai.chatgpt) must be installed.** This extension utilizes the Codex Chat functionality provided by the ChatGPT extension to pass prompt contexts.
 
--   Node.js 16+
--   VS Code 1.84.0+
+### Marketplace (when published)
+Search for "Kiro for Codex IDE" in the VS Code Marketplace and install the extension.
 
-### Setup
+### From Local VSIX
+1. Build the package with `npm run package` (produces `kiro-for-codex-ide-ide-<version>.vsix`).
+2. Install via `code --install-extension kiro-for-codex-ide-ide-<version>.vsix`.
 
-1.  Clone the repository:
-    ```bash
-    git clone https://github.com/atman-33/vscode-extension-boilerplate.git
-    cd vscode-extension-boilerplate
-    ```
+## Usage
 
-2.  Install dependencies for both the extension and the webview UI:
-    ```bash
-    npm run install:all
-    ```
+### Create a Spec
+1. Open the Kiro for Codex IDE activity bar container.
+2. Choose **Specs** → **Create New Spec**.
+3. Describe the feature in the VS Code Codex extension's chat. The extension will then generate requirements, design, and tasks under `.codex/specs/<spec-name>/`.
+4. Review each document before moving to the next step.
 
-### Development
+### Execute Tasks from `tasks.md`
+1. Open the generated `tasks.md` file.
+2. Click the "Start Task" CodeLens next to a checklist item.
+3. The extension checks off the task locally and passes the task context to the VS Code Codex extension's chat. You can then interact with the chat to execute the task.
 
--   **Run the extension in development mode:** Press `F5` in VS Code to open a new Extension Development Host window with the extension loaded.
--   **Watch for changes:** The provided launch configuration will automatically recompile the extension and webview on file changes.
+### Manage Steering Documents
+1. Open the **Steering** view to inspect global and project AGENTS.md files.
+2. Use **Init Steering** to generate product, tech, and structure documents, or **Create Custom Steering** for ad-hoc guidance. These actions will pass the relevant context to the VS Code Codex extension's chat, allowing you to interact and manage your steering documents.
+3. Refine or delete documents from the context menu; the extension keeps AGENTS.md synchronized.
 
-## Available Scripts
+### Work with Prompts
+1. Open the **Prompts** view and press **Create Prompt** to scaffold a Markdown prompt.
+2. Edit the file; Markdown frontmatter is optional.
+3. Use **Run Prompt** to push the file into the Codex Chat (provided by the VS Code Codex extension). You can then interact with the chat to utilize the prompt.
 
--   `npm run install:all`: Installs all dependencies.
--   `npm run build`: Builds both the extension and the webview UI for production.
--   `npm run test`: Runs tests using Vitest.
--   `npm run lint`: Lints the codebase with Biome.
--   `npm run format`: Formats the codebase with Biome.
--   `npm run package`: Packages the extension into a `.vsix` file for distribution.
+## Configuration
+All settings live under the `kiro-codex-ide` namespace.
 
-## How It Works
+| Setting | Type | Default | Purpose |
+| --- | --- | --- | --- |
+| `views.specs.visible` | boolean | `true` | Show or hide the Specs explorer. |
+| `views.steering.visible` | boolean | `true` | Toggle the Steering explorer. |
+| `views.prompts.visible` | boolean | `true` | Toggle the Prompts explorer. |
+| `views.settings.visible` | boolean | `true` | Toggle the Settings overview. |
+| `codex.specsPath` | string | `.codex/specs` | Workspace-relative path for generated specs. |
+| `codex.steeringPath` | string | `.codex/steering` | Workspace-relative path for steering documents. |
+| `codex.promptsPath` | string | `.codex/prompts` | Workspace-relative path for Markdown prompts. |
 
-### Commands
+Paths accept custom locations inside the workspace; the extension mirrors watchers to match custom directories.
 
-Commands are defined in `src/commands/` and registered in `src/extension.ts`. They are also declared in `package.json` under the `contributes.commands` section.
+## Workspace Layout
+```
+.codex/
+├── prompts/                # Markdown prompts consumed by Codex CLI
+├── specs/
+│   └── <spec>/
+│       ├── requirements.md
+│       ├── design.md
+│       └── tasks.md
+├── steering/
+│   └── *.md                # Product / tech / structure guidance
+├── settings/
+│   └── kiroCodex-settings.json
+LICENSE
+src/
+├── extension.ts            # Activation, command registration, tree providers
+├── features/               # Spec and steering managers
+├── providers/              # TreeDataProviders, CodeLens, webviews
+├── services/               # Prompt loader (Handlebars templates)
+├── utils/                  # Config manager, Codex chat helpers
+└── prompts/                # Prompt source markdown and generated TypeScript
+webview-ui/                 # React + Vite webview bundle
+scripts/
+└── build-prompts.js        # Markdown → TypeScript prompt compiler
+```
 
-### WebViews
+## Development
+1. Install dependencies for both the extension and webview UI:
+   - `npm run install:all`
+2. Build prompts and bundle the extension:
+   - `npm run build` (runs prompt compilation, extension bundle, and webview build)
+3. Launch the development host:
+   - Press `F5` inside VS Code or run the `Extension` launch configuration.
+4. Live development:
+   - `npm run watch` (TypeScript watch + webview dev server)
+   - `npm --prefix webview-ui run dev` (webview in isolation)
+5. Generate prompt modules when editing markdown under `src/prompts`:
+   - `npm run build-prompts`
 
-The extension uses VS Code's `WebviewViewProvider` to create views in the activity bar.
+### Testing and Quality
+- Unit tests: `npm test`, `npm run test:watch`, or `npm run test:coverage` (Vitest).
+- Linting, formatting, and static checks: `npm run lint`, `npm run format`, `npm run check` (Ultracite toolchain).
 
-1.  **Providers:** `src/providers/` contains the logic for creating and managing the webviews.
-2.  **UI:** The UI for each webview is a separate React application located in `webview-ui/`.
-3.  **Communication:** Messages are passed between the extension and the WebView UI using `postMessage`. The `webview-ui/src/bridge/vscode.ts` file provides a simple `vscode` object for this purpose.
-
-## Customization
-
-1.  **Rename the extension:** Update the `name`, `displayName`, `publisher`, and `repository` fields in `package.json`.
-2.  **Add new commands:** Create new command files in `src/commands/` and register them in `extension.ts` and `package.json`.
-3.  **Add new WebViews:**
-    -   Create a new React component in `webview-ui/src/components/`.
-    -   Add a new case in the `switch` statement in `webview-ui/src/index.tsx`.
-    -   Create a new `WebviewViewProvider` in `src/providers/`.
-    -   Register the provider in `extension.ts` and `package.json`.
+### Packaging
+- Produce a VSIX with `npm run package` (requires `vsce`).
+- The output bundle lives in `dist/extension.js`; webview assets emit to `dist/webview/app/`.
 
 ## License
+MIT License. See [`LICENSE`](LICENSE).
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+## Credits
+Inspired by the original Kiro project for Claude Code by @notdp, adapted here for Codex CLI workflows.
+
+- Original project: https://github.com/notdp/kiro-for-cc
