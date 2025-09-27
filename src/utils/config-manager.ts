@@ -1,16 +1,15 @@
 import { join } from "path";
-import { Uri, type WorkspaceFolder, workspace } from "vscode";
+import { type WorkspaceFolder, workspace } from "vscode";
 import {
-	CONFIG_FILE_NAME,
 	DEFAULT_PATHS,
 	DEFAULT_VIEW_VISIBILITY,
+	VSC_CONFIG_NAMESPACE,
 } from "../constants";
-
 export type KiroCodexIdeSettings = {
 	paths: {
 		specs: string;
 		steering: string;
-		settings: string;
+		prompts: string;
 	};
 	views: {
 		specs: { visible: boolean };
@@ -39,28 +38,11 @@ export class ConfigManager {
 		return ConfigManager.instance;
 	}
 
+	// biome-ignore lint/suspicious/useAwait: ignore
 	async loadSettings(): Promise<KiroCodexIdeSettings> {
-		if (!this.workspaceFolder) {
-			return this.getDefaultSettings();
-		}
-
-		const settingsPath = join(
-			this.workspaceFolder.uri.fsPath,
-			DEFAULT_PATHS.settings,
-			CONFIG_FILE_NAME
-		);
-
-		try {
-			const fileContent = await workspace.fs.readFile(Uri.file(settingsPath));
-			const settings = JSON.parse(Buffer.from(fileContent).toString());
-			const mergedSettings = { ...this.getDefaultSettings(), ...settings };
-			this.settings = mergedSettings;
-			return this.settings!;
-		} catch (error) {
-			// Return default settings if file doesn't exist
-			this.settings = this.getDefaultSettings();
-			return this.settings!;
-		}
+		const settings = this.getDefaultSettings();
+		this.settings = settings;
+		return settings;
 	}
 
 	getSettings(): KiroCodexIdeSettings {
@@ -72,7 +54,7 @@ export class ConfigManager {
 
 	getPath(type: keyof typeof DEFAULT_PATHS): string {
 		const settings = this.getSettings();
-		return settings.paths[type] || DEFAULT_PATHS[type];
+		return settings.paths[type] ?? DEFAULT_PATHS[type];
 	}
 
 	getAbsolutePath(type: keyof typeof DEFAULT_PATHS): string {
@@ -86,9 +68,71 @@ export class ConfigManager {
 		return ConfigManager.TERMINAL_VENV_ACTIVATION_DELAY;
 	}
 
-	private getDefaultSettings(): KiroCodexIdeSettings {
+	private getConfiguredPaths(): Partial<
+		Record<keyof typeof DEFAULT_PATHS, string>
+	> {
+		const config = workspace.getConfiguration(VSC_CONFIG_NAMESPACE);
+		const promptsPath = config.get<string>("codex.promptsPath")?.trim();
+		const specsPath = config.get<string>("codex.specsPath")?.trim();
+		const steeringPath = config.get<string>("codex.steeringPath")?.trim();
+
+		const configuredPaths: Partial<Record<keyof typeof DEFAULT_PATHS, string>> =
+			{};
+
+		if (promptsPath) {
+			configuredPaths.prompts = promptsPath;
+		}
+
+		if (specsPath) {
+			configuredPaths.specs = specsPath;
+		}
+
+		if (steeringPath) {
+			configuredPaths.steering = steeringPath;
+		}
+
+		return configuredPaths;
+	}
+
+	private mergeSettings(
+		defaults: KiroCodexIdeSettings,
+		overrides: Partial<KiroCodexIdeSettings> = {}
+	): KiroCodexIdeSettings {
+		const mergedPaths = {
+			...defaults.paths,
+			...(overrides.paths ?? {}),
+		};
+
+		const mergedViews = {
+			specs: {
+				visible:
+					overrides.views?.specs?.visible ?? defaults.views.specs.visible,
+			},
+			steering: {
+				visible:
+					overrides.views?.steering?.visible ?? defaults.views.steering.visible,
+			},
+			prompts: {
+				visible:
+					overrides.views?.prompts?.visible ?? defaults.views.prompts.visible,
+			},
+			settings: {
+				visible:
+					overrides.views?.settings?.visible ?? defaults.views.settings.visible,
+			},
+		};
+
 		return {
-			paths: { ...DEFAULT_PATHS },
+			paths: mergedPaths,
+			views: mergedViews,
+		};
+	}
+
+	private getDefaultSettings(): KiroCodexIdeSettings {
+		const configuredPaths = this.getConfiguredPaths();
+
+		return {
+			paths: { ...DEFAULT_PATHS, ...configuredPaths },
 			views: {
 				specs: { visible: DEFAULT_VIEW_VISIBILITY.specs },
 				steering: { visible: DEFAULT_VIEW_VISIBILITY.steering },
@@ -97,27 +141,8 @@ export class ConfigManager {
 			},
 		};
 	}
-
+	// biome-ignore lint/suspicious/useAwait: ignore
 	async saveSettings(settings: KiroCodexIdeSettings): Promise<void> {
-		if (!this.workspaceFolder) {
-			throw new Error("No workspace folder found");
-		}
-
-		const settingsDir = join(
-			this.workspaceFolder.uri.fsPath,
-			DEFAULT_PATHS.settings
-		);
-		const settingsPath = join(settingsDir, CONFIG_FILE_NAME);
-
-		// Ensure directory exists
-		await workspace.fs.createDirectory(Uri.file(settingsDir));
-
-		// Save settings
-		await workspace.fs.writeFile(
-			Uri.file(settingsPath),
-			Buffer.from(JSON.stringify(settings, null, 2))
-		);
-
-		this.settings = settings;
+		this.settings = this.mergeSettings(this.getDefaultSettings(), settings);
 	}
 }

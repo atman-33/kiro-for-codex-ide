@@ -9,14 +9,24 @@ import {
 	workspace,
 } from "vscode";
 
+import { relative } from "path";
+import { VSC_CONFIG_NAMESPACE } from "../constants";
+import { ConfigManager } from "../utils/config-manager";
+
 export class SpecTaskCodeLensProvider implements CodeLensProvider {
 	private readonly _onDidChangeCodeLenses: EventEmitter<void> =
 		new EventEmitter<void>();
 	readonly onDidChangeCodeLenses: Event<void> =
 		this._onDidChangeCodeLenses.event;
+	private readonly configManager: ConfigManager;
 
 	constructor() {
-		workspace.onDidChangeConfiguration((_) => {
+		this.configManager = ConfigManager.getInstance();
+		workspace.onDidChangeConfiguration((event) => {
+			if (event.affectsConfiguration(VSC_CONFIG_NAMESPACE)) {
+				// biome-ignore lint/complexity/noVoid: ignore
+				void this.configManager.loadSettings();
+			}
 			this._onDidChangeCodeLenses.fire();
 		});
 	}
@@ -25,13 +35,7 @@ export class SpecTaskCodeLensProvider implements CodeLensProvider {
 		document: TextDocument,
 		token: CancellationToken
 	): CodeLens[] | Thenable<CodeLens[]> {
-		// Pattern is already filtered by registration, but double-check for tasks.md
-		if (
-			!(
-				document.fileName.includes(".codex/specs/") ||
-				document.fileName.endsWith("tasks.md")
-			)
-		) {
+		if (!this.isSpecTaskDocument(document)) {
 			return [];
 		}
 
@@ -64,6 +68,23 @@ export class SpecTaskCodeLensProvider implements CodeLensProvider {
 		}
 
 		return codeLenses;
+	}
+
+	private isSpecTaskDocument(document: TextDocument): boolean {
+		if (!document.fileName.endsWith("tasks.md")) {
+			return false;
+		}
+
+		try {
+			const specBasePath = this.configManager.getAbsolutePath("specs");
+			const relativePath = relative(specBasePath, document.uri.fsPath);
+			if (!relativePath || relativePath.startsWith("..")) {
+				return false;
+			}
+			return true;
+		} catch (error) {
+			return false;
+		}
 	}
 
 	resolveCodeLens(codeLens: CodeLens, token: CancellationToken) {

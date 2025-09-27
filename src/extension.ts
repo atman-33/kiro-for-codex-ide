@@ -1,4 +1,5 @@
 import { homedir } from "os";
+import type { FileSystemWatcher } from "vscode";
 import {
 	commands,
 	ConfigurationTarget,
@@ -14,7 +15,7 @@ import {
 	workspace,
 	WorkspaceEdit,
 } from "vscode";
-import { CONFIG_FILE_NAME, VSC_CONFIG_NAMESPACE } from "./constants";
+import { VSC_CONFIG_NAMESPACE } from "./constants";
 import { SpecManager } from "./features/spec/spec-manager";
 import { SteeringManager } from "./features/steering/steering-manager";
 import { CodexProvider } from "./providers/codex-provider";
@@ -55,6 +56,9 @@ export async function activate(context: ExtensionContext) {
 	// Initialize Codex provider
 	codexProvider = new CodexProvider(context, outputChannel);
 
+	const configManager = ConfigManager.getInstance();
+	await configManager.loadSettings();
+
 	// Initialize feature managers with output channel
 	specManager = new SpecManager(outputChannel);
 	steeringManager = new SteeringManager(codexProvider, outputChannel);
@@ -93,20 +97,17 @@ export async function activate(context: ExtensionContext) {
 	// Register commands
 	registerCommands(context, specExplorer, steeringExplorer, promptsExplorer);
 
-	// Initialize default settings file if not exists
-	await initializeDefaultSettings();
-
 	// Set up file watchers
 	setupFileWatchers(context, specExplorer, steeringExplorer, promptsExplorer);
 
 	// Register CodeLens provider for spec tasks
 	const specTaskCodeLensProvider = new SpecTaskCodeLensProvider();
 
-	// Use document selector for .codex spec directories
+	// Use document selector for spec task files (dynamic paths handled inside provider)
 	const selector: DocumentSelector = [
 		{
 			language: "markdown",
-			pattern: "**/.codex/specs/*/tasks.md",
+			pattern: "**/*tasks.md",
 			scheme: "file",
 		},
 	];
@@ -120,64 +121,6 @@ export async function activate(context: ExtensionContext) {
 
 	outputChannel.appendLine("CodeLens provider for spec tasks registered");
 }
-
-async function initializeDefaultSettings() {
-	const workspaceFolder = workspace.workspaceFolders?.[0];
-	if (!workspaceFolder) {
-		return;
-	}
-
-	// Create .codex/settings directory if it doesn't exist (primary)
-	const codexDir = Uri.joinPath(workspaceFolder.uri, ".codex");
-	const codexSettingsDir = Uri.joinPath(codexDir, "settings");
-
-	try {
-		await workspace.fs.createDirectory(codexDir);
-		await workspace.fs.createDirectory(codexSettingsDir);
-	} catch (error) {
-		// Directory might already exist
-	}
-
-	await ensureCodexGitignore(codexDir);
-
-	// Create kiro-codex-ide-settings.json in .codex directory
-	const codexSettingsFile = Uri.joinPath(codexSettingsDir, CONFIG_FILE_NAME);
-
-	try {
-		// Check if file exists in .codex directory
-		await workspace.fs.stat(codexSettingsFile);
-	} catch (error) {
-		// File doesn't exist, create with defaults
-		const configManager = ConfigManager.getInstance();
-		const defaultSettings = configManager.getSettings();
-
-		await workspace.fs.writeFile(
-			codexSettingsFile,
-			Buffer.from(JSON.stringify(defaultSettings, null, 2))
-		);
-	}
-}
-
-const ensureCodexGitignore = async (codexDir: Uri): Promise<void> => {
-	const gitignoreUri = Uri.joinPath(codexDir, ".gitignore");
-
-	try {
-		await workspace.fs.stat(gitignoreUri);
-		return;
-	} catch (error) {
-		// File does not exist; fall through to create it.
-	}
-
-	const content = Buffer.from("tmp/\n", "utf8");
-
-	try {
-		await workspace.fs.writeFile(gitignoreUri, content);
-	} catch (error) {
-		outputChannel.appendLine(
-			`[Init] Failed to create .codex/.gitignore: ${error instanceof Error ? error.message : error}`
-		);
-	}
-};
 
 async function toggleViews() {
 	const config = workspace.getConfiguration(VSC_CONFIG_NAMESPACE);
@@ -420,16 +363,23 @@ function registerCommands(
 				window.showErrorMessage("No workspace folder found");
 				return;
 			}
+			const configManager = ConfigManager.getInstance();
+			const promptsPathLabel = configManager.getPath("prompts");
 			const name = await window.showInputBox({
 				title: "Create Prompt",
 				placeHolder: "prompt name (kebab-case)",
-				prompt: "A markdown file will be created under .codex/prompts",
+				prompt: `A markdown file will be created under ${promptsPathLabel}`,
 				validateInput: (v) => (v ? undefined : "Name is required"),
 			});
 			if (!name) {
 				return;
 			}
-			const dir = Uri.joinPath(ws.uri, ".codex", "prompts");
+			let dir = Uri.joinPath(ws.uri, ".codex", "prompts");
+			try {
+				dir = Uri.file(configManager.getAbsolutePath("prompts"));
+			} catch {
+				// fall back to default under workspace
+			}
 			const file = Uri.joinPath(dir, `${name}.md`);
 			try {
 				await workspace.fs.createDirectory(dir);
@@ -489,44 +439,10 @@ function registerCommands(
 		// Overview and settings commands
 		commands.registerCommand("kiro-codex-ide.settings.open", async () => {
 			outputChannel.appendLine("Opening Kiro settings...");
-
-			const workspaceFolder = workspace.workspaceFolders?.[0];
-			if (!workspaceFolder) {
-				window.showErrorMessage("No workspace folder found");
-				return;
-			}
-
-			// Create .codex/settings directory if it doesn't exist
-			const codexDir = Uri.joinPath(workspaceFolder.uri, ".codex");
-			const settingsDir = Uri.joinPath(codexDir, "settings");
-
-			try {
-				await workspace.fs.createDirectory(codexDir);
-				await workspace.fs.createDirectory(settingsDir);
-			} catch (error) {
-				// Directory might already exist
-			}
-
-			// Create or open kiro-codex-ide-settings.json
-			const settingsFile = Uri.joinPath(settingsDir, CONFIG_FILE_NAME);
-
-			try {
-				// Check if file exists
-				await workspace.fs.stat(settingsFile);
-			} catch (error) {
-				// File doesn't exist, create it with default settings
-				const configManager = ConfigManager.getInstance();
-				const defaultSettings = configManager.getSettings();
-
-				await workspace.fs.writeFile(
-					settingsFile,
-					Buffer.from(JSON.stringify(defaultSettings, null, 2))
-				);
-			}
-
-			// Open the settings file
-			const document = await workspace.openTextDocument(settingsFile);
-			await window.showTextDocument(document);
+			await commands.executeCommand(
+				"workbench.action.openSettings",
+				VSC_CONFIG_NAMESPACE
+			);
 		}),
 
 		// biome-ignore lint/suspicious/useAwait: ignore
@@ -567,24 +483,55 @@ function setupFileWatchers(
 		}, 1000); // Increase debounce time to 1 second
 	};
 
-	codexWatcher.onDidCreate((uri) => debouncedRefresh("Create", uri));
-	codexWatcher.onDidDelete((uri) => debouncedRefresh("Delete", uri));
-	codexWatcher.onDidChange((uri) => debouncedRefresh("Change", uri));
+	const attachWatcherHandlers = (watcher: FileSystemWatcher) => {
+		watcher.onDidCreate((uri) => debouncedRefresh("Create", uri));
+		watcher.onDidDelete((uri) => debouncedRefresh("Delete", uri));
+		watcher.onDidChange((uri) => debouncedRefresh("Change", uri));
+	};
 
-	context.subscriptions.push(codexWatcher);
+	attachWatcherHandlers(codexWatcher);
 
-	// Watch for changes in workspace Codex settings (.codex/settings/kiro-codex-ide-settings.json)
+	const watchers: FileSystemWatcher[] = [codexWatcher];
+
 	const wsFolder = workspace.workspaceFolders?.[0];
 	if (wsFolder) {
-		const settingsPattern = new RelativePattern(
-			wsFolder,
-			".codex/settings/kiro-codex-ide-settings.json"
-		);
-		const codexSettingsWatcher =
-			workspace.createFileSystemWatcher(settingsPattern);
+		const normalizeRelativePath = (value: string) =>
+			value
+				.replace(/\\/g, "/")
+				// biome-ignore lint/performance/useTopLevelRegex: ignore
+				.replace(/^\.\//, "")
+				// biome-ignore lint/performance/useTopLevelRegex: ignore
+				.replace(/\/+$/, "");
 
-		context.subscriptions.push(codexSettingsWatcher);
+		const configManager = ConfigManager.getInstance();
+		const configuredPaths = [
+			configManager.getPath("prompts"),
+			configManager.getPath("specs"),
+			configManager.getPath("steering"),
+		];
+
+		const extraPatterns = new Set<string>();
+		for (const rawPath of configuredPaths) {
+			const normalized = normalizeRelativePath(rawPath);
+			if (!normalized || normalized.startsWith("..")) {
+				continue;
+			}
+			if (normalized === ".codex" || normalized.startsWith(".codex/")) {
+				continue;
+			}
+			extraPatterns.add(`${normalized}/**/*`);
+		}
+
+		for (const pattern of extraPatterns) {
+			const watcher = workspace.createFileSystemWatcher(
+				new RelativePattern(wsFolder, pattern)
+			);
+			attachWatcherHandlers(watcher);
+			watchers.push(watcher);
+		}
 	}
+
+	context.subscriptions.push(...watchers);
 
 	// Watch for changes in CODEX.md files
 	const globalHome = homedir() || process.env.USERPROFILE || "";

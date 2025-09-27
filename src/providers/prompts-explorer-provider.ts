@@ -14,8 +14,8 @@ import {
 	window,
 	workspace,
 } from "vscode";
-import { PROMPTS_DIR } from "../constants";
 import { addDocumentToCodexChat } from "../utils/codex-chat-utils";
+import { ConfigManager } from "../utils/config-manager";
 
 const { joinPath } = Uri;
 
@@ -34,9 +34,11 @@ export class PromptsExplorerProvider implements TreeDataProvider<PromptItem> {
 	private isLoading = false;
 
 	private readonly context: ExtensionContext;
+	private readonly configManager: ConfigManager;
 
 	constructor(context: ExtensionContext) {
 		this.context = context;
+		this.configManager = ConfigManager.getInstance();
 	}
 
 	refresh = (): void => {
@@ -160,11 +162,15 @@ export class PromptsExplorerProvider implements TreeDataProvider<PromptItem> {
 
 		const promptFiles = await this.readMarkdownFiles(rootUri);
 		if (promptFiles.length === 0) {
+			const promptsPathLabel = this.configManager.getPath("prompts");
 			return [
 				new PromptItem(
 					"No prompts found",
 					TreeItemCollapsibleState.None,
-					"prompts-empty"
+					"prompts-empty",
+					undefined,
+					undefined,
+					`Create prompts under ${promptsPathLabel}`
 				),
 			];
 		}
@@ -189,8 +195,14 @@ export class PromptsExplorerProvider implements TreeDataProvider<PromptItem> {
 	};
 
 	private readonly getPromptsRoot = (): Uri | undefined => {
-		const workspaceUri = workspace.workspaceFolders?.[0]?.uri;
-		return workspaceUri ? joinPath(workspaceUri, PROMPTS_DIR) : undefined;
+		try {
+			const absolutePath = this.configManager.getAbsolutePath("prompts");
+			return Uri.file(absolutePath);
+		} catch {
+			const workspaceUri = workspace.workspaceFolders?.[0]?.uri;
+			const fallback = this.configManager.getPath("prompts");
+			return workspaceUri ? joinPath(workspaceUri, fallback) : undefined;
+		}
 	};
 
 	private readonly readMarkdownFiles = async (dir: Uri): Promise<string[]> => {
@@ -228,12 +240,14 @@ export class PromptsExplorerProvider implements TreeDataProvider<PromptItem> {
 class PromptItem extends TreeItem {
 	readonly contextValue: string;
 	// biome-ignore lint/nursery/useMaxParams: ignore
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: ignore
 	constructor(
 		label: string,
 		collapsibleState: TreeItemCollapsibleState,
 		contextValue: string,
 		resourceUri?: Uri,
-		command?: Command
+		command?: Command,
+		tooltipOverride?: string
 	) {
 		super(label, collapsibleState);
 
@@ -245,13 +259,15 @@ class PromptItem extends TreeItem {
 
 		if (contextValue === "prompts-loading") {
 			this.iconPath = new ThemeIcon("sync~spin");
-			this.tooltip = "Loading prompts...";
+			this.tooltip = tooltipOverride ?? "Loading prompts...";
 			return;
 		}
 
 		if (contextValue === "prompts-empty") {
 			this.iconPath = new ThemeIcon("info");
-			this.tooltip = "Create prompts under .codex/prompts";
+			this.tooltip =
+				tooltipOverride ??
+				"Create prompts under the configured prompts directory";
 			return;
 		}
 
@@ -269,7 +285,7 @@ class PromptItem extends TreeItem {
 					description && description.length > 0
 						? description
 						: resourceUri.fsPath;
-				this.tooltip = this.description;
+				this.tooltip = tooltipOverride ?? this.description;
 			}
 		}
 	}

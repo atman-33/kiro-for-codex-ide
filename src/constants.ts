@@ -1,18 +1,12 @@
 // VSCode configuration namespace for this extension
 export const VSC_CONFIG_NAMESPACE = "kiro-codex-ide";
 
-// Prompts directory is fixed and not user configurable
-export const PROMPTS_DIR = ".codex/prompts" as const;
-
-// File names
-export const CONFIG_FILE_NAME = "kfc-settings.json";
-
 // Default configuration
 export const DEFAULT_CONFIG = {
 	paths: {
+		prompts: ".codex/prompts",
 		specs: ".codex/specs",
 		steering: ".codex/steering",
-		settings: ".codex/settings",
 	},
 	views: {
 		specs: true,

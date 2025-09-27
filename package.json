@@ -69,6 +69,11 @@
           "default": ".codex/specs",
           "description": "Path where Codex specification files are stored."
         },
+        "kiro-codex-ide.codex.promptsPath": {
+          "type": "string",
+          "default": ".codex/prompts",
+          "description": "Path where Codex prompt files are stored."
+        },
         "kiro-codex-ide.codex.steeringPath": {
           "type": "string",
           "default": ".codex/steering",
