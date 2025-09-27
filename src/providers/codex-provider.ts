@@ -80,7 +80,7 @@ export class CodexProvider {
 	}
 
 	/**
-	 * Invokes Codex Code in a new terminal on the right side (split view) with the given prompt
+	 * Invokes Codex in a new terminal on the right side (split view) with the given prompt
 	 * Returns the terminal instance for potential renaming
 	 */
 	async invokeCodexSplitView(
@@ -129,10 +129,8 @@ export class CodexProvider {
 			// Return the terminal for potential renaming
 			return terminal;
 		} catch (error) {
-			this.outputChannel.appendLine(
-				`ERROR: Failed to send to Codex Code: ${error}`
-			);
-			window.showErrorMessage(`Failed to run Codex Code: ${error}`);
+			this.outputChannel.appendLine(`ERROR: Failed to send to Codex: ${error}`);
+			window.showErrorMessage(`Failed to run Codex: ${error}`);
 			throw error;
 		}
 	}
@@ -165,7 +163,7 @@ export class CodexProvider {
 		prompt: string
 	): Promise<{ exitCode: number | undefined; output?: string }> {
 		this.outputChannel.appendLine(
-			"[CodexProvider] Invoking Codex Code in headless mode"
+			"[CodexProvider] Invoking Codex in headless mode"
 		);
 		this.outputChannel.appendLine("========================================");
 		this.outputChannel.appendLine(prompt);
@@ -186,7 +184,7 @@ export class CodexProvider {
 
 		// Create hidden terminal for background execution
 		const terminal = window.createTerminal({
-			name: "Codex Code Background",
+			name: "Codex Background",
 			cwd,
 			hideFromUser: true,
 		});

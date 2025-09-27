@@ -221,7 +221,7 @@ export class SteeringManager {
 	// biome-ignore lint/suspicious/useAwait: ignore
 	async createProjectCodexMd() {
 		const terminal = window.createTerminal({
-			name: "Codex Code - Init",
+			name: "Codex - Init",
 			cwd: workspace.workspaceFolders?.[0]?.uri.fsPath,
 			location: {
 				viewColumn: ViewColumn.Two,
