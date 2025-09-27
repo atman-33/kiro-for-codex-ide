@@ -39,8 +39,8 @@ A VS Code extension that brings spec-driven development to Codex CLI, leveraging
 Search for "Kiro for Codex IDE" in the VS Code Marketplace and install the extension.
 
 ### From Local VSIX
-1. Build the package with `npm run package` (produces `kiro-for-codex-ide-ide-<version>.vsix`).
-2. Install via `code --install-extension kiro-for-codex-ide-ide-<version>.vsix`.
+1. Build the package with `npm run package` (produces `kiro-for-codex-ide-<version>.vsix`).
+2. Install via `code --install-extension kiro-for-codex-ide-<version>.vsix`.
 
 ## Usage
 
