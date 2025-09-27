@@ -12,7 +12,6 @@ import {
 import type { CodexProvider } from "../../providers/codex-provider";
 import { PromptLoader } from "../../services/prompt-loader";
 import { sendPromptToChat } from "../../utils/chat-prompt-runner";
-import { addDocumentToCodexChat } from "../../utils/codex-chat-utils";
 import { ConfigManager } from "../../utils/config-manager";
 import { NotificationUtils } from "../../utils/notification-utils";
 
@@ -282,12 +281,12 @@ export class SteeringManager {
 		);
 	}
 	/**
-	 * Create global Codex configuration file (~/.codex/config.toml)
+	 * Create global Codex configuration file (~/.codex/AGENTS.md)
 	 */
 	async createUserConfiguration() {
 		const homeDir = homedir() || process.env.USERPROFILE || "";
 		const codexDir = join(homeDir, ".codex");
-		const filePath = join(codexDir, "config.toml");
+		const filePath = join(codexDir, "AGENTS.md");
 
 		// Ensure directory exists
 		try {
@@ -300,7 +299,7 @@ export class SteeringManager {
 		try {
 			await workspace.fs.stat(Uri.file(filePath));
 			const overwrite = await window.showWarningMessage(
-				"Global configuration file (~/.codex/config.toml) already exists. Overwrite?",
+				"Global configuration file (~/.codex/AGENTS.md) already exists. Overwrite?",
 				"Overwrite",
 				"Cancel"
 			);
@@ -311,9 +310,8 @@ export class SteeringManager {
 			// File doesn't exist, continue
 		}
 
-		// Create initial TOML content for Codex CLI
-		const initialContent = `# Codex Global Configuration (TOML)
-# This file controls default behavior for Codex CLI across all projects.
+		// Create initial MD content for Codex CLI
+		const initialContent = `This file controls default behavior for Codex CLI across all projects.
 `;
 
 		await workspace.fs.writeFile(
@@ -324,17 +322,8 @@ export class SteeringManager {
 		const document = await workspace.openTextDocument(filePath);
 		await window.showTextDocument(document, {
 			preview: false,
-			viewColumn: ViewColumn.Beside,
+			viewColumn: ViewColumn.Active,
 		});
-
-		await addDocumentToCodexChat(document.uri, {
-			preview: false,
-			viewColumn: ViewColumn.Beside,
-		});
-
-		await NotificationUtils.showAutoDismissNotification(
-			"Shared ~/.codex/config.toml with ChatGPT. Continue editing together."
-		);
 	}
 
 	/**
