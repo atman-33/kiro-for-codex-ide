@@ -40,4 +40,4 @@ Please:
 1. Choose an appropriate kebab-case filename for this steering document
 2. Create the document in the {{steeringPath}} directory
 3. Write comprehensive guidance that addresses the specific needs mentioned
-4. If a project AGENTS.md.md exists, add or update the "## Steering Documents" section to include this new document with its description and path
+4. If a project AGENTS.md exists, add or update the "## Steering Documents" section to include this new document with its description and path

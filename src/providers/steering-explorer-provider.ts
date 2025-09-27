@@ -50,15 +50,11 @@ export class SteeringExplorerProvider
 	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: ignore
 	async getChildren(element?: SteeringItem): Promise<SteeringItem[]> {
 		if (!element) {
-			// Root level - show AGENTS.md.md files directly
+			// Root level - show AGENTS.md files directly
 			const items: SteeringItem[] = [];
 
 			// Check existence of files
-			const globalCodexMd = join(
-				process.env.HOME || "",
-				".codex",
-				"AGENTS.md.md"
-			);
+			const globalCodexMd = join(process.env.HOME || "", ".codex", "AGENTS.md");
 			const globalExists = existsSync(globalCodexMd);
 
 			let projectCodexMd = "";
@@ -66,7 +62,7 @@ export class SteeringExplorerProvider
 			if (workspace.workspaceFolders) {
 				projectCodexMd = join(
 					workspace.workspaceFolders[0].uri.fsPath,
-					"AGENTS.md.md"
+					"AGENTS.md"
 				);
 				projectExists = existsSync(projectCodexMd);
 			}
@@ -82,7 +78,7 @@ export class SteeringExplorerProvider
 						this.context,
 						{
 							command: "vscode.open",
-							title: "Open Global AGENTS.md.md",
+							title: "Open Global AGENTS.md",
 							arguments: [Uri.file(globalCodexMd)],
 						}
 					)
@@ -99,7 +95,7 @@ export class SteeringExplorerProvider
 						this.context,
 						{
 							command: "vscode.open",
-							title: "Open Project AGENTS.md.md",
+							title: "Open Project AGENTS.md",
 							arguments: [Uri.file(projectCodexMd)],
 						}
 					)
@@ -134,7 +130,7 @@ export class SteeringExplorerProvider
 						this.context,
 						{
 							command: SteeringExplorerProvider.createUserRuleCommandId,
-							title: "Create Global AGENTS.md.md",
+							title: "Create Global AGENTS.md",
 						}
 					)
 				);
@@ -150,7 +146,7 @@ export class SteeringExplorerProvider
 						this.context,
 						{
 							command: SteeringExplorerProvider.createProjectRuleCommandId,
-							title: "Create Project AGENTS.md.md",
+							title: "Create Project AGENTS.md",
 						}
 					)
 				);
@@ -224,18 +220,18 @@ class SteeringItem extends TreeItem {
 		// Set appropriate icons based on type
 		if (contextValue === "codex-md-global") {
 			this.iconPath = new ThemeIcon("globe");
-			this.tooltip = `Global AGENTS.md.md: ${resourcePath}`;
-			this.description = "~/.codex/AGENTS.md.md";
+			this.tooltip = `Global AGENTS.md: ${resourcePath}`;
+			this.description = "~/.codex/AGENTS.md";
 		} else if (contextValue === "codex-md-project") {
 			this.iconPath = new ThemeIcon("root-folder");
-			this.tooltip = `Project AGENTS.md.md: ${resourcePath}`;
-			this.description = "AGENTS.md.md";
+			this.tooltip = `Project AGENTS.md: ${resourcePath}`;
+			this.description = "AGENTS.md";
 		} else if (contextValue === "create-global-codex") {
 			this.iconPath = new ThemeIcon("globe");
-			this.tooltip = "Click to create Global AGENTS.md.md";
+			this.tooltip = "Click to create Global AGENTS.md";
 		} else if (contextValue === "create-project-codex") {
 			this.iconPath = new ThemeIcon("root-folder");
-			this.tooltip = "Click to create Project AGENTS.md.md";
+			this.tooltip = "Click to create Project AGENTS.md";
 		} else if (contextValue === "separator") {
 			this.iconPath = undefined;
 			this.description = undefined;

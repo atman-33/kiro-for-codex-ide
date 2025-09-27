@@ -11,10 +11,10 @@ import {
 } from "vscode";
 import type { CodexProvider } from "../../providers/codex-provider";
 import { PromptLoader } from "../../services/prompt-loader";
-import { ConfigManager } from "../../utils/config-manager";
-import { NotificationUtils } from "../../utils/notification-utils";
 import { sendPromptToChat } from "../../utils/chat-prompt-runner";
 import { addDocumentToCodexChat } from "../../utils/codex-chat-utils";
+import { ConfigManager } from "../../utils/config-manager";
+import { NotificationUtils } from "../../utils/notification-utils";
 
 export class SteeringManager {
 	private readonly configManager: ConfigManager;
@@ -80,7 +80,7 @@ export class SteeringManager {
 	}
 
 	/**
-	 * Delete a steering document and update AGENTS.md.md
+	 * Delete a steering document and update AGENTS.md
 	 */
 	async delete(
 		documentName: string,
@@ -98,20 +98,20 @@ export class SteeringManager {
 
 			// Show progress notification
 			await NotificationUtils.showAutoDismissNotification(
-				`Deleting "${documentName}" and updating AGENTS.md.md...`
+				`Deleting "${documentName}" and updating AGENTS.md...`
 			);
 
-			// Execute Codex command to update AGENTS.md.md
+			// Execute Codex command to update AGENTS.md
 			const result = await this.codexProvider.invokeCodexHeadless(prompt);
 
 			if (result.exitCode === 0) {
 				await NotificationUtils.showAutoDismissNotification(
-					`Steering document "${documentName}" deleted and AGENTS.md.md updated successfully.`
+					`Steering document "${documentName}" deleted and AGENTS.md updated successfully.`
 				);
 				return { success: true };
 			}
 			if (result.exitCode !== undefined) {
-				const error = `Failed to update AGENTS.md.md. Exit code: ${result.exitCode}`;
+				const error = `Failed to update AGENTS.md. Exit code: ${result.exitCode}`;
 				this.outputChannel.appendLine(`[Steering] ${error}`);
 				return { success: false, error };
 			}
@@ -216,7 +216,7 @@ export class SteeringManager {
 	}
 
 	/**
-	 * Create project-level AGENTS.md.md file using Codex CLI
+	 * Create project-level AGENTS.md file using Codex CLI
 	 */
 
 	// biome-ignore lint/suspicious/useAwait: ignore
@@ -238,11 +238,11 @@ export class SteeringManager {
 	}
 
 	/**
-	 * Create global AGENTS.md.md file in user's home directory
+	 * Create global AGENTS.md file in user's home directory
 	 */
 	async createUserCodexMd() {
 		const codexDir = join(process.env.HOME || "", ".codex");
-		const filePath = join(codexDir, "AGENTS.md.md");
+		const filePath = join(codexDir, "AGENTS.md");
 
 		// Ensure directory exists
 		try {
@@ -255,7 +255,7 @@ export class SteeringManager {
 		try {
 			await workspace.fs.stat(Uri.file(filePath));
 			const overwrite = await window.showWarningMessage(
-				"Global AGENTS.md.md already exists. Overwrite?",
+				"Global AGENTS.md already exists. Overwrite?",
 				"Overwrite",
 				"Cancel"
 			);
@@ -278,7 +278,7 @@ export class SteeringManager {
 		await window.showTextDocument(document);
 
 		await NotificationUtils.showAutoDismissNotification(
-			"Created global AGENTS.md.md file"
+			"Created global AGENTS.md file"
 		);
 	}
 	/**

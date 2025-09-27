@@ -2,7 +2,7 @@
 id: delete-steering
 name: Delete Steering
 version: 1.0.0
-description: Prompt for updating AGENTS.md.md after deleting a steering document
+description: Prompt for updating AGENTS.md after deleting a steering document
 variables:
   documentName:
     type: string
@@ -16,4 +16,4 @@ variables:
 
 The steering document "{{documentName}}" has been deleted from {{steeringPath}}.
 
-If a project AGENTS.md.md exists and contains a "## Steering Documents" section, please update it to remove the reference to this deleted document.
+If a project AGENTS.md exists and contains a "## Steering Documents" section, please update it to remove the reference to this deleted document.

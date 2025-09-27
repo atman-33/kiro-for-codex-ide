@@ -53,7 +53,7 @@ Create exactly these three files by analyzing the codebase:
 - Check if files exist before creating (DO NOT overwrite)
 - Write directly to filesystem
 - Keep content concise but complete
-- If AGENTS.md.md exists, update its "## Steering Documents" section
+- If AGENTS.md exists, update its "## Steering Documents" section
 </system>
 
 # Initialize Steering Documents
@@ -77,4 +77,4 @@ IMPORTANT:
 1. Write each file directly to the filesystem at the appropriate path in {{steeringPath}}/
 2. Check if any of these files already exist before creating them. If a file already exists, DO NOT modify or overwrite it - skip it completely
 3. Only create files that don't exist
-4. If a project AGENTS.md.md exists, create or update the "## Steering Documents" section listing all steering documents with their descriptions and paths
+4. If a project AGENTS.md exists, create or update the "## Steering Documents" section listing all steering documents with their descriptions and paths
