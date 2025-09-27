@@ -125,12 +125,16 @@
         "contents": "Plan features with Specs\n\n[$(plus) Create New Spec](command:kiro-codex-ide.spec.create)"
       },
       {
+        "view": "kiro-codex-ide.views.steeringExplorer",
+        "contents": "[$(globe) Create User Rule](command:kiro-codex-ide.steering.createUserRule)\n\n[$(root-folder) Create Project Rule](command:kiro-codex-ide.steering.createProjectRule)"
+      },
+      {
         "view": "kiro-codex-ide.views.promptsExplorer",
         "contents": "Create and run prompts (.md) under .codex/prompts\n\n[$(plus) Create Prompt](command:kiro-codex-ide.prompts.create)\n[$(refresh) Refresh](command:kiro-codex-ide.prompts.refresh)"
       },
       {
-        "view": "kiro-codex-ide.views.steeringExplorer",
-        "contents": "[$(globe) Create User Rule](command:kiro-codex-ide.steering.createUserRule)\n\n[$(root-folder) Create Project Rule](command:kiro-codex-ide.steering.createProjectRule)"
+        "view": "kiro-codex-ide.views.overview",
+        "contents": "Configure Kiro for Codex IDE\n\n[$(gear) Open Settings](command:kiro-codex-ide.settings.open)\n[$(question) Help](command:kiro-codex-ide.help.open)"
       }
     ],
     "commands": [
@@ -216,6 +220,18 @@
         "title": "Run Prompt",
         "category": "Kiro for Codex IDE",
         "icon": "$(play)"
+      },
+      {
+        "command": "kiro-codex-ide.settings.open",
+        "title": "Kiro Settings",
+        "category": "Kiro for Codex IDE",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "kiroCodex.help.open",
+        "title": "Kiro Help",
+        "category": "Kiro for Codex",
+        "icon": "$(question)"
       }
     ],
     "menus": {
