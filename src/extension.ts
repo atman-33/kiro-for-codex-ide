@@ -14,6 +14,7 @@ import {
 	window,
 	workspace,
 	WorkspaceEdit,
+	type WorkspaceFolder,
 } from "vscode";
 import { VSC_CONFIG_NAMESPACE } from "./constants";
 import { SpecManager } from "./features/spec/spec-manager";
@@ -33,6 +34,32 @@ let specManager: SpecManager;
 let steeringManager: SteeringManager;
 export let outputChannel: OutputChannel;
 
+const ensureWorkspaceCodexGitignore = async (folder: WorkspaceFolder) => {
+	const codexDir = Uri.joinPath(folder.uri, ".codex");
+	const gitignoreUri = Uri.joinPath(codexDir, ".gitignore");
+
+	try {
+		await workspace.fs.stat(gitignoreUri);
+		return;
+	} catch {
+		// File missing, continue to create it.
+	}
+
+	try {
+		await workspace.fs.createDirectory(codexDir);
+	} catch {
+		// Directory already exists or cannot be created; ignore and attempt to write the file.
+	}
+
+	try {
+		await workspace.fs.writeFile(gitignoreUri, Buffer.from("tmp/\n"));
+	} catch (error) {
+		outputChannel?.appendLine(
+			`Failed to create ${gitignoreUri.fsPath}: ${error}`
+		);
+	}
+};
+
 export async function activate(context: ExtensionContext) {
 	// Create output channel for debugging
 	outputChannel = window.createOutputChannel("Kiro for Codex - Debug");
@@ -51,6 +78,10 @@ export async function activate(context: ExtensionContext) {
 	const workspaceFolders = workspace.workspaceFolders;
 	if (!workspaceFolders || workspaceFolders.length === 0) {
 		outputChannel.appendLine("WARNING: No workspace folder found!");
+	}
+
+	if (workspaceFolders && workspaceFolders.length > 0) {
+		await Promise.all(workspaceFolders.map(ensureWorkspaceCodexGitignore));
 	}
 
 	// Initialize Codex provider
