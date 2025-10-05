@@ -2,6 +2,19 @@
 
 ---
 
+## v0.1.2 2025-10-05
+
+### Added
+
+- add automatic .gitignore creation for .codex/tmp directory
+
+### Changed
+
+- feature/codex-ignore-tmp
+- Merge pull request #4 from atman-33/atman-33-patch-1
+- Update README.md
+- Merge pull request #3 from atman-33/version-bump/v0.1.1
+
 ## v0.1.1 2025-09-27
 
 ### Added
