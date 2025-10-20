@@ -8,6 +8,7 @@ type TextareaPanelProps = {
 	disabled?: boolean;
 	rows?: number;
 	textareaRef?: React.Ref<HTMLTextAreaElement>;
+	textareaProps?: React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 	/** Additional classes for the textarea element */
 	textareaClassName?: string;
 	/** Additional classes for the container */
@@ -29,6 +30,7 @@ export function TextareaPanel({
 	disabled,
 	rows = 1,
 	textareaRef,
+	textareaProps,
 	textareaClassName,
 	containerClassName,
 	containerStyle,
@@ -58,6 +60,7 @@ export function TextareaPanel({
 					placeholder={placeholder}
 					ref={textareaRef}
 					rows={rows}
+					{...(textareaProps ?? {})}
 					value={value}
 				/>
 			</div>
