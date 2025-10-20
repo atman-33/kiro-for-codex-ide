@@ -10,7 +10,7 @@ import {
 	type Uri,
 } from "vscode";
 
-const CODEX_ADD_TO_CHAT_COMMAND_ID = "chatgpt.addToChat";
+const CODEX_ADD_TO_CHAT_COMMAND_ID = "chatgpt.addToThread";
 
 const selectEntireDocument = async (
 	documentUri: Uri,

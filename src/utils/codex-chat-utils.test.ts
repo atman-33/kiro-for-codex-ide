@@ -30,7 +30,7 @@ describe("codex-chat-utils", () => {
 		// @ts-expect-error
 		window.activeTextEditor = mockEditor;
 		await addDocumentToCodexChat(mockUri);
-		expect(commands.executeCommand).toHaveBeenCalledWith("chatgpt.addToChat");
+		expect(commands.executeCommand).toHaveBeenCalledWith("chatgpt.addToThread");
 	});
 
 	// 2. Edge Case: Test selectEntireDocument when the editor is visible but not active.
@@ -48,7 +48,7 @@ describe("codex-chat-utils", () => {
 			mockDocument,
 			expect.any(Object)
 		);
-		expect(commands.executeCommand).toHaveBeenCalledWith("chatgpt.addToChat");
+		expect(commands.executeCommand).toHaveBeenCalledWith("chatgpt.addToThread");
 	});
 
 	// 3. Fail Safe / Mocks: Test selectEntireDocument when the document is not open.
@@ -60,6 +60,6 @@ describe("codex-chat-utils", () => {
 			mockDocument,
 			expect.any(Object)
 		);
-		expect(commands.executeCommand).toHaveBeenCalledWith("chatgpt.addToChat");
+		expect(commands.executeCommand).toHaveBeenCalledWith("chatgpt.addToThread");
 	});
 });
