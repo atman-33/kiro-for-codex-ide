@@ -9,6 +9,7 @@ import {
 	useState,
 	type ChangeEvent,
 	type FormEvent,
+	type ReactNode,
 } from "react";
 
 type CreateSpecFormData = {
@@ -45,6 +46,38 @@ const EMPTY_FORM: CreateSpecFormData = {
 const AUTOSAVE_DEBOUNCE_MS = 600;
 const MAX_FIELD_LENGTH = 5000;
 const SUMMARY_HELPER_ID = "create-spec-summary-helper";
+
+type StatusTone = "info" | "warning" | "error";
+
+type StatusBannerProps = {
+	children: ReactNode;
+	tone: StatusTone;
+	role: "status" | "alert";
+	ariaLive?: "polite" | "assertive";
+};
+
+const STATUS_TONE_CLASSES: Record<StatusTone, string> = {
+	info: "border-[color:color-mix(in_srgb,var(--vscode-foreground)_35%,transparent)] bg-[color:color-mix(in_srgb,var(--vscode-foreground)_12%,transparent)] text-[color:var(--vscode-foreground)]",
+	warning:
+		"border-[color:color-mix(in_srgb,var(--vscode-warningForeground)_50%,transparent)] bg-[color:color-mix(in_srgb,var(--vscode-warningForeground)_12%,transparent)] text-[color:var(--vscode-warningForeground)]",
+	error:
+		"border-[color:var(--vscode-errorForeground)] bg-[color:color-mix(in_srgb,var(--vscode-errorForeground)_12%,transparent)] text-[color:var(--vscode-errorForeground)]",
+};
+
+const StatusBanner = ({
+	children,
+	tone,
+	role,
+	ariaLive = "polite",
+}: StatusBannerProps) => (
+	<div
+		aria-live={ariaLive}
+		className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm ${STATUS_TONE_CLASSES[tone]}`}
+		role={role}
+	>
+		{children}
+	</div>
+);
 
 const normalizeFormData = (
 	data: Partial<CreateSpecFormData> | undefined
@@ -320,28 +353,33 @@ export const CreateSpecView = () => {
 		};
 	}, [isDirty]);
 
-	const renderHelperText = () => {
+	const statusBanner = useMemo(() => {
 		if (submissionError) {
 			return (
-				<div
-					className="srgb,var(--vscode-errorForeground)_12%,transparent)] rounded-md border border-[var(--vscode-errorForeground)] bg-[color-mix(in px-3 py-2 text-[var(--vscode-errorForeground)] text-sm"
-					role="alert"
-				>
+				<StatusBanner ariaLive="assertive" role="alert" tone="error">
 					{submissionError}
-				</div>
+				</StatusBanner>
 			);
 		}
 
 		if (closeWarningVisible) {
 			return (
-				<div className="rounded-md border border-[color:color-mix(in_srgb,var(--vscode-warningForeground)_50%,transparent)] bg-[color:color-mix(in_srgb,var(--vscode-warningForeground)_12%,transparent)] px-3 py-2 text-[var(--vscode-warningForeground)] text-sm">
+				<StatusBanner role="status" tone="warning">
 					Changes are still available. Close action was cancelled.
-				</div>
+				</StatusBanner>
 			);
 		}
 
-		return;
-	};
+		if (isSubmitting) {
+			return (
+				<StatusBanner role="status" tone="info">
+					Sending spec prompt…
+				</StatusBanner>
+			);
+		}
+
+		return null;
+	}, [closeWarningVisible, isSubmitting, submissionError]);
 
 	const lastSavedLabel = formatTimestamp(draftSavedAt);
 	const autosaveStatus = useMemo(() => {
@@ -368,9 +406,10 @@ export const CreateSpecView = () => {
 				</p>
 			</header>
 
-			{renderHelperText()}
+			{statusBanner}
 
 			<form
+				aria-busy={isSubmitting}
 				className="flex flex-1 flex-col gap-6"
 				noValidate
 				onSubmit={handleSubmit}
