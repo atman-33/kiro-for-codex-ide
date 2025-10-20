@@ -297,8 +297,7 @@ export class CreateSpecInputController {
 				modal: true,
 				detail: "Choose Cancel to resume editing and keep your current input.",
 			},
-			"Discard",
-			"Cancel"
+			"Discard"
 		);
 
 		const selection = isMessageItem(result) ? result.title : result;
