@@ -1,6 +1,13 @@
 import { vscode } from "@/bridge/vscode";
-import { TextareaPanel } from "@/components/textarea-panel";
-import { Button } from "@/components/ui/button";
+import { CreateSpecForm } from "./components/create-spec-form";
+import { StatusBanner } from "./components/status-banner";
+import type {
+	CreateSpecDraftState,
+	CreateSpecExtensionMessage,
+	CreateSpecFieldErrors,
+	CreateSpecFormData,
+	CreateSpecInitPayload,
+} from "./types";
 import {
 	useCallback,
 	useEffect,
@@ -9,32 +16,7 @@ import {
 	useState,
 	type ChangeEvent,
 	type FormEvent,
-	type ReactNode,
 } from "react";
-
-type CreateSpecFormData = {
-	summary: string;
-	productContext: string;
-	technicalConstraints: string;
-	openQuestions: string;
-};
-
-type CreateSpecDraftState = {
-	formData: CreateSpecFormData;
-	lastUpdated: number;
-};
-
-type CreateSpecInitPayload = {
-	shouldFocusPrimaryField: boolean;
-	draft?: CreateSpecDraftState;
-};
-
-type CreateSpecExtensionMessage =
-	| { type: "create-spec/init"; payload: CreateSpecInitPayload }
-	| { type: "create-spec/submit:success" }
-	| { type: "create-spec/submit:error"; payload: { message: string } }
-	| { type: "create-spec/confirm-close"; payload: { shouldClose: boolean } }
-	| { type: "create-spec/focus" };
 
 const EMPTY_FORM: CreateSpecFormData = {
 	summary: "",
@@ -45,40 +27,6 @@ const EMPTY_FORM: CreateSpecFormData = {
 
 const AUTOSAVE_DEBOUNCE_MS = 600;
 const MAX_FIELD_LENGTH = 5000;
-const SUMMARY_HELPER_ID = "create-spec-summary-helper";
-
-type StatusTone = "info" | "warning" | "error";
-
-type StatusBannerProps = {
-	children: ReactNode;
-	tone: StatusTone;
-	role: "status" | "alert";
-	ariaLive?: "polite" | "assertive";
-};
-
-const STATUS_TONE_CLASSES: Record<StatusTone, string> = {
-	info: "border-[color:color-mix(in_srgb,var(--vscode-foreground)_35%,transparent)] bg-[color:color-mix(in_srgb,var(--vscode-foreground)_12%,transparent)] text-[color:var(--vscode-foreground)]",
-	warning:
-		"border-[color:color-mix(in_srgb,var(--vscode-warningForeground)_50%,transparent)] bg-[color:color-mix(in_srgb,var(--vscode-warningForeground)_12%,transparent)] text-[color:var(--vscode-warningForeground)]",
-	error:
-		"border-[color:var(--vscode-errorForeground)] bg-[color:color-mix(in_srgb,var(--vscode-errorForeground)_12%,transparent)] text-[color:var(--vscode-errorForeground)]",
-};
-
-const StatusBanner = ({
-	children,
-	tone,
-	role,
-	ariaLive = "polite",
-}: StatusBannerProps) => (
-	<div
-		aria-live={ariaLive}
-		className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm ${STATUS_TONE_CLASSES[tone]}`}
-		role={role}
-	>
-		{children}
-	</div>
-);
-
 const normalizeFormData = (
 	data: Partial<CreateSpecFormData> | undefined
 ): CreateSpecFormData => ({
@@ -136,7 +84,7 @@ const readPersistedDraft = (): CreateSpecDraftState | undefined => {
 export const CreateSpecView = () => {
 	const [formData, setFormData] = useState<CreateSpecFormData>(EMPTY_FORM);
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [fieldErrors, setFieldErrors] = useState<{ summary?: string }>({});
+	const [fieldErrors, setFieldErrors] = useState<CreateSpecFieldErrors>({});
 	const [submissionError, setSubmissionError] = useState<string | undefined>();
 	const [draftSavedAt, setDraftSavedAt] = useState<number | undefined>();
 	const [closeWarningVisible, setCloseWarningVisible] = useState(false);
@@ -408,143 +356,20 @@ export const CreateSpecView = () => {
 
 			{statusBanner}
 
-			<form
-				aria-busy={isSubmitting}
-				className="flex flex-1 flex-col gap-6"
-				noValidate
+			<CreateSpecForm
+				autosaveStatus={autosaveStatus}
+				fieldErrors={fieldErrors}
+				formData={formData}
+				isSubmitting={isSubmitting}
+				maxFieldLength={MAX_FIELD_LENGTH}
+				onCancel={handleCancel}
+				onFieldChange={handleFieldChange}
 				onSubmit={handleSubmit}
-			>
-				<section className="flex flex-1 flex-col gap-4">
-					<div className="flex flex-col gap-2">
-						<label
-							className="font-medium text-[color:var(--vscode-foreground)] text-sm"
-							htmlFor="create-spec-summary"
-						>
-							Summary{" "}
-							<span className="text-[color:var(--vscode-errorForeground)]">
-								*
-							</span>
-						</label>
-						<TextareaPanel
-							containerClassName="shadow-[0_16px_32px_rgba(0,0,0,0.25)]"
-							disabled={isSubmitting}
-							onChange={handleFieldChange("summary")}
-							placeholder="Capture the key outcome you want to achieve…"
-							rows={4}
-							textareaClassName="min-h-[6rem] text-sm leading-6"
-							textareaProps={{
-								id: "create-spec-summary",
-								name: "summary",
-								"aria-required": true,
-								"aria-invalid": fieldErrors.summary ? true : undefined,
-								"aria-describedby": SUMMARY_HELPER_ID,
-							}}
-							textareaRef={summaryRef}
-							value={formData.summary}
-						>
-							<div
-								className="flex items-center justify-between px-3 text-[color:var(--vscode-descriptionForeground,rgba(255,255,255,0.6))] text-xs"
-								id={SUMMARY_HELPER_ID}
-							>
-								<span>
-									{Math.max(0, MAX_FIELD_LENGTH - formData.summary.length)}{" "}
-									characters remaining
-								</span>
-								{fieldErrors.summary ? (
-									<span className="text-[color:var(--vscode-errorForeground)]">
-										{fieldErrors.summary}
-									</span>
-								) : null}
-							</div>
-						</TextareaPanel>
-					</div>
-
-					<div className="flex flex-col gap-2">
-						<label
-							className="font-medium text-[color:var(--vscode-foreground)] text-sm"
-							htmlFor="create-spec-product-context"
-						>
-							Product Context
-						</label>
-						<TextareaPanel
-							disabled={isSubmitting}
-							onChange={handleFieldChange("productContext")}
-							placeholder="Describe current product state, users, or constraints…"
-							rows={3}
-							textareaClassName="min-h-[5rem] text-sm leading-6"
-							textareaProps={{
-								id: "create-spec-product-context",
-								name: "productContext",
-							}}
-							textareaRef={productContextRef}
-							value={formData.productContext}
-						/>
-					</div>
-
-					<div className="flex flex-col gap-2">
-						<label
-							className="font-medium text-[color:var(--vscode-foreground)] text-sm"
-							htmlFor="create-spec-technical-constraints"
-						>
-							Technical Constraints
-						</label>
-						<TextareaPanel
-							disabled={isSubmitting}
-							onChange={handleFieldChange("technicalConstraints")}
-							placeholder="List architecture decisions, deadlines, or compliance needs…"
-							rows={3}
-							textareaClassName="min-h-[5rem] text-sm leading-6"
-							textareaProps={{
-								id: "create-spec-technical-constraints",
-								name: "technicalConstraints",
-							}}
-							textareaRef={technicalConstraintsRef}
-							value={formData.technicalConstraints}
-						/>
-					</div>
-
-					<div className="flex flex-col gap-2">
-						<label
-							className="font-medium text-[color:var(--vscode-foreground)] text-sm"
-							htmlFor="create-spec-open-questions"
-						>
-							Open Questions
-						</label>
-						<TextareaPanel
-							disabled={isSubmitting}
-							onChange={handleFieldChange("openQuestions")}
-							placeholder="Capture unknowns, dependencies, or risks to explore…"
-							rows={3}
-							textareaClassName="min-h-[5rem] text-sm leading-6"
-							textareaProps={{
-								id: "create-spec-open-questions",
-								name: "openQuestions",
-							}}
-							textareaRef={openQuestionsRef}
-							value={formData.openQuestions}
-						/>
-					</div>
-				</section>
-
-				<footer className="flex flex-col gap-3 border-[color:color-mix(in_srgb,var(--vscode-foreground)_12%,transparent)] border-t pt-4">
-					<div className="flex flex-wrap items-center justify-between gap-3 text-[color:var(--vscode-descriptionForeground,rgba(255,255,255,0.6))] text-xs">
-						<span>{autosaveStatus}</span>
-					</div>
-					<div className="flex flex-wrap justify-end gap-3">
-						<Button
-							disabled={isSubmitting}
-							onClick={handleCancel}
-							type="button"
-							variant="secondary"
-						>
-							Cancel
-						</Button>
-						<Button disabled={isSubmitting} type="submit" variant="default">
-							{isSubmitting ? "Creating…" : "Create Spec"}
-						</Button>
-					</div>
-				</footer>
-			</form>
+				openQuestionsRef={openQuestionsRef}
+				productContextRef={productContextRef}
+				summaryRef={summaryRef}
+				technicalConstraintsRef={technicalConstraintsRef}
+			/>
 		</div>
 	);
 };
