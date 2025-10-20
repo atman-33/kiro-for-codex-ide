@@ -2,6 +2,21 @@
 
 ---
 
+## v0.1.3 2025-10-20
+
+### Added
+
+- update command ID for adding to chat thread
+
+### Changed
+
+- feature/update-chatgpt-command
+- Merge pull request #6 from atman-33/version-bump/v0.1.2
+
+### Fixed
+
+- update command from 'addToChat' to 'addToThread' in tests
+
 ## v0.1.2 2025-10-05
 
 ### Added
