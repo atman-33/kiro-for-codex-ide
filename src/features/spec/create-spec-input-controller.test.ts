@@ -172,6 +172,13 @@ describe("CreateSpecInputController", () => {
 		});
 	});
 
+	it("loads the create-spec webview bundle", async () => {
+		const controller = createController();
+		await controller.open();
+
+		expect(htmlValue).toContain('data-page="create-spec"');
+	});
+
 	it("restores saved draft state when available", async () => {
 		const draft: CreateSpecDraftState = {
 			formData: {
