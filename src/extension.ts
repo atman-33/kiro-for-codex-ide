@@ -91,7 +91,7 @@ export async function activate(context: ExtensionContext) {
 	await configManager.loadSettings();
 
 	// Initialize feature managers with output channel
-	specManager = new SpecManager(outputChannel);
+	specManager = new SpecManager(context, outputChannel);
 	steeringManager = new SteeringManager(codexProvider, outputChannel);
 
 	// Register tree data providers
