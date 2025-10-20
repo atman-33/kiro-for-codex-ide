@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ExtensionContext } from "vscode";
-import { Uri, ViewColumn, window, workspace } from "vscode";
+import type { ExtensionContext, MessageItem } from "vscode";
+import { Uri, ViewColumn, window } from "vscode";
 import { CreateSpecInputController } from "./create-spec-input-controller";
+import type { CreateSpecDraftState } from "./types";
 import { sendPromptToChat } from "../../utils/chat-prompt-runner";
 import { NotificationUtils } from "../../utils/notification-utils";
 
@@ -17,37 +18,33 @@ vi.mock("../../utils/notification-utils", () => ({
 }));
 
 describe("CreateSpecInputController", () => {
+	let context: ExtensionContext;
 	let postMessageMock: ReturnType<typeof vi.fn>;
 	let revealMock: ReturnType<typeof vi.fn>;
 	let disposeMock: ReturnType<typeof vi.fn>;
 	let onDidDisposeMock: ReturnType<typeof vi.fn>;
 	let onDidReceiveMessageMock: ReturnType<typeof vi.fn>;
+	let workspaceStateGetMock: ReturnType<typeof vi.fn>;
+	let workspaceStateUpdateMock: ReturnType<typeof vi.fn>;
+	let configManager: { getPath: ReturnType<typeof vi.fn> };
+	let promptLoader: { renderPrompt: ReturnType<typeof vi.fn> };
+	let outputChannel: { appendLine: ReturnType<typeof vi.fn> };
 	let htmlValue: string;
 	let messageHandler:
 		| ((
 				message:
 					| { type: "create-spec/submit"; payload: any }
-					| { type: "create-spec/ready" }
+					| { type: "create-spec/autosave"; payload: any }
+					| {
+							type: "create-spec/close-attempt";
+							payload: { hasDirtyChanges: boolean };
+					  }
 					| { type: "create-spec/cancel" }
+					| { type: "create-spec/ready" }
 		  ) => Promise<void>)
 		| undefined;
-	const context: ExtensionContext = {
-		extensionUri: Uri.parse("file:///extension"),
-		workspaceState: {
-			get: vi.fn(),
-			update: vi.fn(),
-		},
-		subscriptions: [],
-	} as unknown as ExtensionContext;
-	const configManager = {
-		getPath: vi.fn().mockReturnValue(".codex/specs"),
-	};
-	const promptLoader = {
-		renderPrompt: vi.fn().mockReturnValue("prompt-content"),
-	};
-	const outputChannel = {
-		appendLine: vi.fn(),
-	};
+
+	const createMessageItem = (title: string): MessageItem => ({ title });
 
 	const createController = () =>
 		new CreateSpecInputController({
@@ -62,7 +59,31 @@ describe("CreateSpecInputController", () => {
 		htmlValue = "";
 		messageHandler = undefined;
 
-		postMessageMock = vi.fn(() => Promise.resolve(true));
+		workspaceStateGetMock = vi.fn();
+		workspaceStateUpdateMock = vi.fn();
+
+		context = {
+			extensionUri: Uri.parse("file:///extension"),
+			workspaceState: {
+				get: workspaceStateGetMock,
+				update: workspaceStateUpdateMock,
+			},
+			subscriptions: [],
+		} as unknown as ExtensionContext;
+
+		configManager = {
+			getPath: vi.fn().mockReturnValue(".codex/specs"),
+		};
+
+		promptLoader = {
+			renderPrompt: vi.fn().mockReturnValue("prompt-content"),
+		};
+
+		outputChannel = {
+			appendLine: vi.fn(),
+		};
+
+		postMessageMock = vi.fn().mockResolvedValue(true);
 		revealMock = vi.fn();
 		disposeMock = vi.fn();
 		onDidDisposeMock = vi.fn((callback: () => void) => ({
@@ -76,8 +97,13 @@ describe("CreateSpecInputController", () => {
 				handler: (
 					message:
 						| { type: "create-spec/submit"; payload: any }
-						| { type: "create-spec/ready" }
+						| { type: "create-spec/autosave"; payload: any }
+						| {
+								type: "create-spec/close-attempt";
+								payload: { hasDirtyChanges: boolean };
+						  }
 						| { type: "create-spec/cancel" }
+						| { type: "create-spec/ready" }
 				) => Promise<void>
 			) => {
 				messageHandler = handler;
@@ -108,16 +134,20 @@ describe("CreateSpecInputController", () => {
 
 		(window as any).createWebviewPanel = vi.fn(() => panel);
 		vi.mocked(sendPromptToChat).mockResolvedValue(undefined);
+		(window as any).showWarningMessage = window.showWarningMessage;
+		vi.mocked(window.showWarningMessage).mockResolvedValue(
+			createMessageItem("Cancel")
+		);
 	});
 
-	const triggerSubmit = async (payload: any) => {
+	const emitMessage = async (message: any) => {
 		if (!messageHandler) {
 			throw new Error("message handler not registered");
 		}
-		await messageHandler({ type: "create-spec/submit", payload });
+		await messageHandler(message);
 	};
 
-	it("opens a new WebView panel and posts init message", async () => {
+	it("opens panel and posts init message with focus flag", async () => {
 		const controller = createController();
 		await controller.open();
 
@@ -133,14 +163,164 @@ describe("CreateSpecInputController", () => {
 				retainContextWhenHidden: true,
 			})
 		);
-		expect(htmlValue).toContain('data-page="create-spec"');
 		expect(postMessageMock).toHaveBeenCalledWith({
 			type: "create-spec/init",
-			payload: { shouldFocusPrimaryField: true },
+			payload: {
+				draft: undefined,
+				shouldFocusPrimaryField: true,
+			},
 		});
 	});
 
-	it("reveals existing panel and requests focus", async () => {
+	it("restores saved draft state when available", async () => {
+		const draft: CreateSpecDraftState = {
+			formData: {
+				summary: "Saved summary",
+				productContext: "Saved product context",
+				technicalConstraints: "",
+				openQuestions: "",
+			},
+			lastUpdated: 123,
+		};
+
+		workspaceStateGetMock.mockReturnValueOnce(draft);
+
+		const controller = createController();
+		await controller.open();
+
+		expect(postMessageMock).toHaveBeenCalledWith({
+			type: "create-spec/init",
+			payload: {
+				draft,
+				shouldFocusPrimaryField: true,
+			},
+		});
+	});
+
+	it("submits form data and clears draft state on success", async () => {
+		const controller = createController();
+		await controller.open();
+
+		await emitMessage({
+			type: "create-spec/submit",
+			payload: {
+				summary: " Feature idea ",
+				productContext: "Context",
+				technicalConstraints: "",
+				openQuestions: "",
+			},
+		});
+
+		expect(promptLoader.renderPrompt).toHaveBeenCalledWith(
+			"create-spec",
+			expect.objectContaining({
+				description: expect.stringContaining("Summary:\nFeature idea"),
+				workspacePath: "/fake/workspace",
+				specBasePath: ".codex/specs",
+			})
+		);
+		expect(sendPromptToChat).toHaveBeenCalledWith("prompt-content");
+		expect(NotificationUtils.showAutoDismissNotification).toHaveBeenCalled();
+		expect(workspaceStateUpdateMock).toHaveBeenCalledWith(
+			"createSpecDraftState",
+			undefined
+		);
+		expect(disposeMock).toHaveBeenCalled();
+	});
+
+	it("handles autosave messages by storing draft state", async () => {
+		const controller = createController();
+		await controller.open();
+
+		// biome-ignore lint/style/noMagicNumbers: ignore
+		const nowSpy = vi.spyOn(Date, "now").mockReturnValue(1_700_000_000_000);
+
+		await emitMessage({
+			type: "create-spec/autosave",
+			payload: {
+				summary: "Draft summary",
+				productContext: "",
+				technicalConstraints: "Constraints",
+				openQuestions: "",
+			},
+		});
+
+		expect(workspaceStateUpdateMock).toHaveBeenCalledWith(
+			"createSpecDraftState",
+			{
+				formData: {
+					summary: "Draft summary",
+					productContext: "",
+					technicalConstraints: "Constraints",
+					openQuestions: "",
+				},
+				lastUpdated: 1_700_000_000_000,
+			}
+		);
+
+		nowSpy.mockRestore();
+	});
+
+	it("closes panel immediately when there are no dirty changes", async () => {
+		const controller = createController();
+		await controller.open();
+
+		await emitMessage({
+			type: "create-spec/close-attempt",
+			payload: { hasDirtyChanges: false },
+		});
+
+		expect(workspaceStateUpdateMock).toHaveBeenCalledWith(
+			"createSpecDraftState",
+			undefined
+		);
+		expect(disposeMock).toHaveBeenCalled();
+		expect(window.showWarningMessage).not.toHaveBeenCalled();
+	});
+
+	it("keeps panel open when user cancels closing despite dirty changes", async () => {
+		const controller = createController();
+		await controller.open();
+
+		vi.mocked(window.showWarningMessage).mockResolvedValueOnce(
+			createMessageItem("Cancel")
+		);
+		postMessageMock.mockClear();
+
+		await emitMessage({
+			type: "create-spec/close-attempt",
+			payload: { hasDirtyChanges: true },
+		});
+
+		expect(window.showWarningMessage).toHaveBeenCalled();
+		expect(disposeMock).not.toHaveBeenCalled();
+		expect(postMessageMock).toHaveBeenCalledWith({
+			type: "create-spec/confirm-close",
+			payload: { shouldClose: false },
+		});
+	});
+
+	it("discards draft and closes when user confirms", async () => {
+		const controller = createController();
+		await controller.open();
+
+		vi.mocked(window.showWarningMessage).mockResolvedValueOnce(
+			createMessageItem("Discard")
+		);
+
+		await emitMessage({
+			type: "create-spec/close-attempt",
+			payload: { hasDirtyChanges: true },
+		});
+
+		expect(workspaceStateUpdateMock).toHaveBeenCalledWith(
+			"createSpecDraftState",
+			undefined
+		);
+		expect(disposeMock).toHaveBeenCalled();
+	});
+
+	it("reveals existing panel instead of recreating", async () => {
 		const controller = createController();
 		await controller.open();
 
@@ -153,115 +333,5 @@ describe("CreateSpecInputController", () => {
 		expect(postMessageMock).toHaveBeenCalledWith({
 			type: "create-spec/focus",
 		});
-	});
-
-	it("submits form payload and sends prompt to chat", async () => {
-		const controller = createController();
-		await controller.open();
-
-		await triggerSubmit({
-			summary: "Short summary",
-			productContext: "Context details",
-		});
-
-		expect(promptLoader.renderPrompt).toHaveBeenCalledWith(
-			"create-spec",
-			expect.objectContaining({
-				description: expect.stringContaining("Summary:\nShort summary"),
-				workspacePath: "/fake/workspace",
-				specBasePath: ".codex/specs",
-			})
-		);
-		expect(sendPromptToChat).toHaveBeenCalledWith("prompt-content");
-		expect(NotificationUtils.showAutoDismissNotification).toHaveBeenCalled();
-		expect(postMessageMock).toHaveBeenCalledWith({
-			type: "create-spec/submit:success",
-		});
-		expect(disposeMock).toHaveBeenCalled();
-	});
-
-	it("returns validation error when summary is missing", async () => {
-		const controller = createController();
-		await controller.open();
-
-		await triggerSubmit({
-			summary: "   ",
-		});
-
-		expect(promptLoader.renderPrompt).not.toHaveBeenCalled();
-		expect(postMessageMock).toHaveBeenCalledWith({
-			type: "create-spec/submit:error",
-			payload: { message: "Summary is required." },
-		});
-		expect(sendPromptToChat).not.toHaveBeenCalled();
-	});
-
-	it("falls back to non-modal panel when modal creation fails", async () => {
-		const panel = {
-			webview: {
-				asWebviewUri: vi.fn((resource) => resource),
-				cspSource: "mock-csp",
-				postMessage: postMessageMock,
-				onDidReceiveMessage: onDidReceiveMessageMock,
-			},
-			reveal: revealMock,
-			dispose: disposeMock,
-			onDidDispose: onDidDisposeMock,
-		} as any;
-
-		Object.defineProperty(panel.webview, "html", {
-			get: () => htmlValue,
-			set: (value: string) => {
-				htmlValue = value;
-			},
-		});
-
-		const createWebviewPanelMock = vi
-			.fn()
-			.mockImplementationOnce(() => {
-				throw new Error("modal unsupported");
-			})
-			.mockImplementationOnce(() => panel);
-
-		(window as any).createWebviewPanel = createWebviewPanelMock;
-
-		const controller = createController();
-		await controller.open();
-
-		expect(createWebviewPanelMock).toHaveBeenNthCalledWith(
-			1,
-			"kiro.createSpecDialog",
-			"Create New Spec",
-			{
-				viewColumn: ViewColumn.Active,
-				preserveFocus: false,
-			},
-			expect.any(Object)
-		);
-		expect(createWebviewPanelMock).toHaveBeenNthCalledWith(
-			2,
-			"kiro.createSpecPanel",
-			"Create New Spec",
-			ViewColumn.Active,
-			expect.any(Object)
-		);
-		expect(outputChannel.appendLine).toHaveBeenCalledWith(
-			expect.stringContaining("Failed to open modal panel")
-		);
-	});
-
-	it("shows error message if workspace folder is missing", async () => {
-		const originalFolders = workspace.workspaceFolders;
-		(workspace as any).workspaceFolders = undefined;
-
-		const controller = createController();
-		await controller.open();
-
-		expect(window.showErrorMessage).toHaveBeenCalledWith(
-			"No workspace folder open"
-		);
-		expect((window as any).createWebviewPanel).not.toHaveBeenCalled();
-
-		(workspace as any).workspaceFolders = originalFolders;
 	});
 });

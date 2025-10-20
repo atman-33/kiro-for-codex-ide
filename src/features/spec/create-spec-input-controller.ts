@@ -1,5 +1,6 @@
 import {
 	type ExtensionContext,
+	type MessageItem,
 	type OutputChannel,
 	Uri,
 	ViewColumn,
@@ -8,10 +9,16 @@ import {
 	workspace,
 } from "vscode";
 import type { PromptLoader } from "../../services/prompt-loader";
-import { sendPromptToChat } from "../../utils/chat-prompt-runner";
 import type { ConfigManager } from "../../utils/config-manager";
+import { sendPromptToChat } from "../../utils/chat-prompt-runner";
 import { getWebviewContent } from "../../utils/get-webview-content";
 import { NotificationUtils } from "../../utils/notification-utils";
+import type {
+	CreateSpecDraftState,
+	CreateSpecFormData,
+	CreateSpecWebviewMessage,
+	CreateSpecExtensionMessage,
+} from "./types";
 
 type CreateSpecInputControllerDependencies = {
 	context: ExtensionContext;
@@ -20,31 +27,34 @@ type CreateSpecInputControllerDependencies = {
 	outputChannel: OutputChannel;
 };
 
-type CreateSpecFormData = {
-	summary: string;
-	productContext?: string;
-	technicalConstraints?: string;
-	openQuestions?: string;
+const CREATE_SPEC_DRAFT_STATE_KEY = "createSpecDraftState";
+
+const isMessageItem = (value: unknown): value is MessageItem => {
+	if (typeof value !== "object" || value === null) {
+		return false;
+	}
+
+	const candidate = value as { title?: unknown };
+	return typeof candidate.title === "string";
 };
 
-type CreateSpecMessage =
-	| {
-			type: "create-spec/submit";
-			payload: CreateSpecFormData;
-	  }
-	| { type: "create-spec/ready" }
-	| { type: "create-spec/cancel" };
+const normalizeFormData = (data: CreateSpecFormData): CreateSpecFormData => ({
+	summary: data.summary ?? "",
+	productContext: data.productContext ?? "",
+	technicalConstraints: data.technicalConstraints ?? "",
+	openQuestions: data.openQuestions ?? "",
+});
 
 const formatDescription = (data: CreateSpecFormData): string => {
 	const sections = [
 		`Summary:\n${data.summary.trim()}`,
-		data.productContext?.trim()
+		data.productContext.trim()
 			? `Product Context:\n${data.productContext.trim()}`
 			: undefined,
-		data.technicalConstraints?.trim()
+		data.technicalConstraints.trim()
 			? `Technical Constraints:\n${data.technicalConstraints.trim()}`
 			: undefined,
-		data.openQuestions?.trim()
+		data.openQuestions.trim()
 			? `Open Questions:\n${data.openQuestions.trim()}`
 			: undefined,
 	].filter(Boolean);
@@ -57,6 +67,7 @@ export class CreateSpecInputController {
 	private readonly configManager: ConfigManager;
 	private readonly promptLoader: PromptLoader;
 	private readonly outputChannel: OutputChannel;
+	private draft: CreateSpecDraftState | undefined;
 	private panel: WebviewPanel | undefined;
 
 	constructor({
@@ -71,11 +82,10 @@ export class CreateSpecInputController {
 		this.outputChannel = outputChannel;
 	}
 
-	// biome-ignore lint/suspicious/useAwait: ignore
-	open = async (): Promise<void> => {
+	async open(): Promise<void> {
 		if (this.panel) {
 			this.panel.reveal(ViewColumn.Active, false);
-			this.postFocusMessage();
+			await this.postFocusMessage();
 			return;
 		}
 
@@ -84,6 +94,8 @@ export class CreateSpecInputController {
 			window.showErrorMessage("No workspace folder open");
 			return;
 		}
+
+		this.draft = this.getDraftState();
 
 		this.panel = this.createPanel();
 		if (!this.panel) {
@@ -97,10 +109,10 @@ export class CreateSpecInputController {
 			this.context.extensionUri,
 			"create-spec"
 		);
-		this.postInitMessage();
-	};
+		await this.postInitMessage();
+	}
 
-	private readonly createPanel = (): WebviewPanel | undefined => {
+	private createPanel(): WebviewPanel | undefined {
 		const resourceRoots = [
 			Uri.joinPath(this.context.extensionUri, "dist", "webview"),
 			Uri.joinPath(this.context.extensionUri, "dist", "webview", "app"),
@@ -142,51 +154,66 @@ export class CreateSpecInputController {
 				return;
 			}
 		}
-	};
+	}
 
-	private readonly registerPanelListeners = (panel: WebviewPanel): void => {
+	private registerPanelListeners(panel: WebviewPanel): void {
 		panel.onDidDispose(() => {
 			this.panel = undefined;
 		});
 
-		panel.webview.onDidReceiveMessage(async (message: CreateSpecMessage) => {
-			if (message.type === "create-spec/submit") {
-				await this.handleSubmit(message.payload);
-				return;
-			}
+		panel.webview.onDidReceiveMessage(
+			async (message: CreateSpecWebviewMessage) => {
+				if (message.type === "create-spec/submit") {
+					await this.handleSubmit(message.payload);
+					return;
+				}
 
-			if (message.type === "create-spec/cancel") {
-				panel.dispose();
-			}
-		});
-	};
+				if (message.type === "create-spec/autosave") {
+					await this.handleAutosave(message.payload);
+					return;
+				}
 
-	private readonly postInitMessage = (): void => {
+				if (message.type === "create-spec/close-attempt") {
+					await this.handleCloseAttempt(message.payload.hasDirtyChanges);
+					return;
+				}
+
+				if (message.type === "create-spec/cancel") {
+					panel.dispose();
+				}
+			}
+		);
+	}
+
+	private async postInitMessage(): Promise<void> {
 		if (!this.panel) {
 			return;
 		}
 
-		this.panel.webview.postMessage({
+		const message: CreateSpecExtensionMessage = {
 			type: "create-spec/init",
 			payload: {
+				draft: this.draft,
 				shouldFocusPrimaryField: true,
 			},
-		});
-	};
+		};
 
-	private readonly postFocusMessage = (): void => {
+		await this.panel.webview.postMessage(message);
+	}
+
+	private async postFocusMessage(): Promise<void> {
 		if (!this.panel) {
 			return;
 		}
 
-		this.panel.webview.postMessage({
+		const message: CreateSpecExtensionMessage = {
 			type: "create-spec/focus",
-		});
-	};
+		};
 
-	private readonly handleSubmit = async (
-		data: CreateSpecFormData
-	): Promise<void> => {
+		await this.panel.webview.postMessage(message);
+	}
+
+	private async handleSubmit(data: CreateSpecFormData): Promise<void> {
 		if (!this.panel) {
 			return;
 		}
@@ -199,17 +226,19 @@ export class CreateSpecInputController {
 
 		const sanitizedSummary = data.summary?.trim();
 		if (!sanitizedSummary) {
-			this.panel.webview.postMessage({
+			await this.panel.webview.postMessage({
 				type: "create-spec/submit:error",
 				payload: { message: "Summary is required." },
 			});
 			return;
 		}
 
-		const payload = formatDescription({
+		const normalized = normalizeFormData({
 			...data,
 			summary: sanitizedSummary,
 		});
+
+		const payload = formatDescription(normalized);
 
 		try {
 			const prompt = this.promptLoader.renderPrompt("create-spec", {
@@ -223,7 +252,9 @@ export class CreateSpecInputController {
 				"Sent the spec creation prompt to ChatGPT. Continue the flow there."
 			);
 
-			this.panel.webview.postMessage({
+			await this.clearDraftState();
+
+			await this.panel.webview.postMessage({
 				type: "create-spec/submit:success",
 			});
 			this.panel.dispose();
@@ -233,11 +264,76 @@ export class CreateSpecInputController {
 				`[CreateSpecInputController] Failed to submit spec request: ${message}`
 			);
 
-			this.panel.webview.postMessage({
+			await this.panel.webview.postMessage({
 				type: "create-spec/submit:error",
 				payload: { message },
 			});
 			window.showErrorMessage(`Failed to create spec prompt: ${message}`);
 		}
-	};
+	}
+
+	private async handleAutosave(data: CreateSpecFormData): Promise<void> {
+		this.draft = {
+			formData: normalizeFormData(data),
+			lastUpdated: Date.now(),
+		};
+		await this.saveDraftState(this.draft);
+	}
+
+	private async handleCloseAttempt(hasDirtyChanges: boolean): Promise<void> {
+		if (!this.panel) {
+			return;
+		}
+
+		if (!hasDirtyChanges) {
+			await this.clearDraftState();
+			this.panel.dispose();
+			return;
+		}
+
+		const result = await window.showWarningMessage(
+			"You have unsaved spec input. Close the dialog and discard your changes?",
+			{
+				modal: true,
+				detail: "Choose Cancel to resume editing and keep your current input.",
+			},
+			"Discard",
+			"Cancel"
+		);
+
+		const selection = isMessageItem(result) ? result.title : result;
+		const shouldClose = selection === "Discard";
+
+		if (shouldClose) {
+			await this.clearDraftState();
+			this.panel.dispose();
+			return;
+		}
+
+		await this.panel.webview.postMessage({
+			type: "create-spec/confirm-close",
+			payload: { shouldClose: false },
+		});
+	}
+
+	private getDraftState(): CreateSpecDraftState | undefined {
+		return this.context.workspaceState.get<CreateSpecDraftState>(
+			CREATE_SPEC_DRAFT_STATE_KEY
+		);
+	}
+
+	private async saveDraftState(state: CreateSpecDraftState): Promise<void> {
+		await this.context.workspaceState.update(
+			CREATE_SPEC_DRAFT_STATE_KEY,
+			state
+		);
+	}
+
+	private async clearDraftState(): Promise<void> {
+		this.draft = undefined;
+		await this.context.workspaceState.update(
+			CREATE_SPEC_DRAFT_STATE_KEY,
+			undefined
+		);
+	}
 }
