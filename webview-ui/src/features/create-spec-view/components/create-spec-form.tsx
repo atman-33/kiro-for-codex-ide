@@ -69,7 +69,7 @@ export const CreateSpecForm = ({
 					value={formData.summary}
 				>
 					<div
-						className="flex items-center justify-between px-3 text-[color:var(--vscode-descriptionForeground,rgba(255,255,255,0.6))] text-xs"
+						className="flex items-center justify-between px-3 py-2 text-[color:var(--vscode-descriptionForeground,rgba(255,255,255,0.6))] text-xs"
 						id={SUMMARY_HELPER_ID}
 					>
 						<span>
