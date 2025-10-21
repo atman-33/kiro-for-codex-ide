@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { FileType, window, workspace } from "vscode";
+import type { ExtensionContext } from "vscode";
+import { FileType, Uri, window, workspace } from "vscode";
 import { PromptLoader } from "../../services/prompt-loader";
-import { sendPromptToChat } from "../../utils/chat-prompt-runner";
-import { NotificationUtils } from "../../utils/notification-utils";
+import { ConfigManager } from "../../utils/config-manager";
 import { SpecManager } from "./spec-manager";
 
 // Mock dependencies
@@ -19,14 +19,38 @@ vi.mock("../../services/prompt-loader", () => {
 });
 vi.mock("../../utils/chat-prompt-runner");
 vi.mock("../../utils/notification-utils");
+const { openMock, createSpecInputControllerMock } = vi.hoisted(() => {
+	const open = vi.fn();
+	return {
+		openMock: open,
+		createSpecInputControllerMock: vi.fn(() => ({
+			open,
+		})),
+	};
+});
+vi.mock("./create-spec-input-controller", () => ({
+	// biome-ignore lint/style/useNamingConvention: ignore
+	CreateSpecInputController: createSpecInputControllerMock,
+}));
 
 describe("SpecManager", () => {
 	let specManager: SpecManager;
+	let mockContext: ExtensionContext;
 	const mockOutputChannel = { appendLine: vi.fn() } as any;
 
 	beforeEach(() => {
 		vi.clearAllMocks();
-		specManager = new SpecManager(mockOutputChannel);
+		openMock.mockClear();
+		createSpecInputControllerMock.mockClear();
+		mockContext = {
+			extensionUri: Uri.parse("file:///extension"),
+			workspaceState: {
+				get: vi.fn(),
+				update: vi.fn(),
+			},
+			subscriptions: [],
+		} as unknown as ExtensionContext;
+		specManager = new SpecManager(mockContext, mockOutputChannel);
 		vi.mocked(workspace.fs.stat).mockResolvedValue({} as any);
 	});
 
@@ -64,25 +88,14 @@ describe("SpecManager", () => {
 
 	// 3. Fail Safe / Mocks: Test the create method.
 	it("should render and send a prompt to chat on create", async () => {
-		const description = "My new feature idea";
-		const prompt = "Generated prompt";
-
-		vi.mocked(window.showInputBox).mockResolvedValue(description);
-		const mockedPromptLoader = PromptLoader.getInstance();
-		vi.mocked(mockedPromptLoader.renderPrompt).mockReturnValue(prompt);
-
 		await specManager.create();
 
-		expect(window.showInputBox).toHaveBeenCalled();
-		expect(mockedPromptLoader.renderPrompt).toHaveBeenCalledWith(
-			"create-spec",
-			{
-				description,
-				workspacePath: "/fake/workspace",
-				specBasePath: ".codex/specs",
-			}
-		);
-		expect(sendPromptToChat).toHaveBeenCalledWith(prompt);
-		expect(NotificationUtils.showAutoDismissNotification).toHaveBeenCalled();
+		expect(createSpecInputControllerMock).toHaveBeenCalledWith({
+			context: mockContext,
+			configManager: ConfigManager.getInstance(),
+			promptLoader: PromptLoader.getInstance(),
+			outputChannel: mockOutputChannel,
+		});
+		expect(openMock).toHaveBeenCalled();
 	});
 });

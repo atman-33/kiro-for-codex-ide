@@ -1,21 +1,17 @@
 import "./app.css";
 
 import { createRoot } from "react-dom/client";
-import { InteractiveView } from "./features/interactive-view";
-import { SimpleView } from "./features/simple-view";
+import { getPageRenderer } from "./page-registry";
 
 const container = document.getElementById("root")!;
 const root = createRoot(container);
 
 const page = container.dataset.page || "simple";
 
-switch (page) {
-	case "simple":
-		root.render(<SimpleView />);
-		break;
-	case "interactive":
-		root.render(<InteractiveView />);
-		break;
-	default:
-		root.render(<div style={{ padding: 12 }}>Unknown page: {page}</div>);
+const renderer = getPageRenderer(page);
+
+if (renderer) {
+	root.render(renderer());
+} else {
+	root.render(<div style={{ padding: 12 }}>Unknown page: {page}</div>);
 }

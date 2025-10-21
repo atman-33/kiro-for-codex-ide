@@ -15,6 +15,7 @@
       "!src/prompts/target/**/*",
       "!webview-ui/src/components/ui/**/*.tsx",
       "!webview-ui/src/app.css",
+      "!webview-ui/node_modules/**/*",
       "!.tmp/**/*",
       "!.codex/**/*"
     ],

@@ -1,6 +1,7 @@
 import { dirname, join } from "path";
 import {
 	FileType,
+	type ExtensionContext,
 	type OutputChannel,
 	Uri,
 	ViewColumn,
@@ -11,6 +12,7 @@ import { PromptLoader } from "../../services/prompt-loader";
 import { ConfigManager } from "../../utils/config-manager";
 import { NotificationUtils } from "../../utils/notification-utils";
 import { sendPromptToChat } from "../../utils/chat-prompt-runner";
+import { CreateSpecInputController } from "./create-spec-input-controller";
 
 export type SpecDocumentType = "requirements" | "design" | "tasks";
 
@@ -18,12 +20,19 @@ export class SpecManager {
 	private readonly configManager: ConfigManager;
 	private readonly promptLoader: PromptLoader;
 	private readonly outputChannel: OutputChannel;
+	private readonly createSpecInputController: CreateSpecInputController;
 
-	constructor(outputChannel: OutputChannel) {
+	constructor(context: ExtensionContext, outputChannel: OutputChannel) {
 		this.configManager = ConfigManager.getInstance();
 		this.configManager.loadSettings();
 		this.promptLoader = PromptLoader.getInstance();
 		this.outputChannel = outputChannel;
+		this.createSpecInputController = new CreateSpecInputController({
+			context,
+			configManager: this.configManager,
+			promptLoader: this.promptLoader,
+			outputChannel: this.outputChannel,
+		});
 	}
 
 	getSpecBasePath(): string {
@@ -31,38 +40,16 @@ export class SpecManager {
 	}
 
 	async create() {
-		// Get feature description only
-		const description = await window.showInputBox({
-			title: "✨ Create New Spec ✨",
-			prompt:
-				"Specs are a structured way to build features so you can plan before building",
-			placeHolder:
-				"Enter your idea to generate requirement, design, and task specs...",
-			ignoreFocusOut: false,
-		});
-
-		if (!description) {
-			return;
+		try {
+			await this.createSpecInputController.open();
+		} catch (error) {
+			const message =
+				error instanceof Error ? error.message : "Unable to open spec dialog";
+			this.outputChannel.appendLine(
+				`[SpecManager] Failed to open Create Spec dialog: ${message}`
+			);
+			window.showErrorMessage(`Failed to open Create Spec dialog: ${message}`);
 		}
-
-		const workspaceFolder = workspace.workspaceFolders?.[0];
-		if (!workspaceFolder) {
-			window.showErrorMessage("No workspace folder open");
-			return;
-		}
-
-		// Render the spec creation prompt for chat
-		const prompt = this.promptLoader.renderPrompt("create-spec", {
-			description,
-			workspacePath: workspaceFolder.uri.fsPath,
-			specBasePath: this.getSpecBasePath(),
-		});
-
-		await sendPromptToChat(prompt);
-
-		NotificationUtils.showAutoDismissNotification(
-			"Sent the spec creation prompt to ChatGPT. Continue the flow there."
-		);
 	}
 
 	async navigateToDocument(specName: string, type: SpecDocumentType) {
