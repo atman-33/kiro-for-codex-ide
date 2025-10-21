@@ -2,6 +2,33 @@
 
 ---
 
+## v0.1.4 2025-10-21
+
+### Added
+
+- add auto-resize behavior and ref forwarding
+- add status banner component for form feedback
+- add support for draft persistence and autosave in create-spec form
+- add create-spec webview page and update page routing
+- enhance CreateSpecInputController with autosave and close handling features
+- implement CreateSpecInputController and integrate with SpecManager for spec creation flow
+
+### Changed
+
+- feature/spec-steering-input-box
+- update README with improved spec creation flow and clarify UI elements
+- ignore webview-ui node_modules in biome
+- add padding to summary field for better spacing
+- add CreateSpecForm component with form fields and validation
+- update package-lock.json
+- add templates for generating commit messages and pull request drafts
+- add steering docs to guide and enforce project structure and practices
+- Merge pull request #8 from atman-33/version-bump/v0.1.3
+
+### Fixed
+
+- remove 'Cancel' from discard confirmation dialog
+
 ## v0.1.3 2025-10-20
 
 ### Added
