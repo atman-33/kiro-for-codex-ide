@@ -26,7 +26,6 @@ const EMPTY_FORM: CreateSpecFormData = {
 };
 
 const AUTOSAVE_DEBOUNCE_MS = 600;
-const MAX_FIELD_LENGTH = 5000;
 const normalizeFormData = (
 	data: Partial<CreateSpecFormData> | undefined
 ): CreateSpecFormData => ({
@@ -139,7 +138,7 @@ export const CreateSpecView = () => {
 	const handleFieldChange = useCallback(
 		(field: keyof CreateSpecFormData) =>
 			(event: ChangeEvent<HTMLTextAreaElement>) => {
-				const value = event.target.value.slice(0, MAX_FIELD_LENGTH);
+				const value = event.target.value;
 				setFormData((previous) => {
 					const next = {
 						...previous,
@@ -361,7 +360,6 @@ export const CreateSpecView = () => {
 				fieldErrors={fieldErrors}
 				formData={formData}
 				isSubmitting={isSubmitting}
-				maxFieldLength={MAX_FIELD_LENGTH}
 				onCancel={handleCancel}
 				onFieldChange={handleFieldChange}
 				onSubmit={handleSubmit}

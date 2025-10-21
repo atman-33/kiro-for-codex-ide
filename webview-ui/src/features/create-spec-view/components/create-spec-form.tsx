@@ -19,7 +19,6 @@ type CreateSpecFormProps = {
 	productContextRef: MutableRefObject<HTMLTextAreaElement | null>;
 	technicalConstraintsRef: MutableRefObject<HTMLTextAreaElement | null>;
 	openQuestionsRef: MutableRefObject<HTMLTextAreaElement | null>;
-	maxFieldLength: number;
 };
 
 export const CreateSpecForm = ({
@@ -34,7 +33,6 @@ export const CreateSpecForm = ({
 	productContextRef,
 	technicalConstraintsRef,
 	openQuestionsRef,
-	maxFieldLength,
 }: CreateSpecFormProps) => (
 	<form
 		aria-busy={isSubmitting}
@@ -57,31 +55,29 @@ export const CreateSpecForm = ({
 					onChange={onFieldChange("summary")}
 					placeholder="Capture the key outcome you want to achieve…"
 					rows={4}
-					textareaClassName="min-h-[6rem] text-sm leading-6"
+					textareaClassName="min-h-[6rem] max-h-[60vh] overflow-y-auto text-sm leading-6"
 					textareaProps={{
 						id: "create-spec-summary",
 						name: "summary",
 						"aria-required": true,
 						"aria-invalid": fieldErrors.summary ? true : undefined,
-						"aria-describedby": SUMMARY_HELPER_ID,
+						"aria-describedby": fieldErrors.summary
+							? SUMMARY_HELPER_ID
+							: undefined,
 					}}
 					textareaRef={summaryRef}
 					value={formData.summary}
 				>
-					<div
-						className="flex items-center justify-between px-3 py-2 text-[color:var(--vscode-descriptionForeground,rgba(255,255,255,0.6))] text-xs"
-						id={SUMMARY_HELPER_ID}
-					>
-						<span>
-							{Math.max(0, maxFieldLength - formData.summary.length)} characters
-							remaining
-						</span>
-						{fieldErrors.summary ? (
+					{fieldErrors.summary ? (
+						<div
+							className="flex items-center justify-end px-3 py-2 text-[color:var(--vscode-descriptionForeground,rgba(255,255,255,0.6))] text-xs"
+							id={SUMMARY_HELPER_ID}
+						>
 							<span className="text-[color:var(--vscode-errorForeground)]">
 								{fieldErrors.summary}
 							</span>
-						) : null}
-					</div>
+						</div>
+					) : null}
 				</TextareaPanel>
 			</div>
 
@@ -97,7 +93,7 @@ export const CreateSpecForm = ({
 					onChange={onFieldChange("productContext")}
 					placeholder="Describe current product state, users, or constraints…"
 					rows={3}
-					textareaClassName="min-h-[5rem] text-sm leading-6"
+					textareaClassName="min-h-[5rem] max-h-[60vh] overflow-y-auto text-sm leading-6"
 					textareaProps={{
 						id: "create-spec-product-context",
 						name: "productContext",
@@ -119,7 +115,7 @@ export const CreateSpecForm = ({
 					onChange={onFieldChange("technicalConstraints")}
 					placeholder="List architecture decisions, deadlines, or compliance needs…"
 					rows={3}
-					textareaClassName="min-h-[5rem] text-sm leading-6"
+					textareaClassName="min-h-[5rem] max-h-[60vh] overflow-y-auto text-sm leading-6"
 					textareaProps={{
 						id: "create-spec-technical-constraints",
 						name: "technicalConstraints",
@@ -141,7 +137,7 @@ export const CreateSpecForm = ({
 					onChange={onFieldChange("openQuestions")}
 					placeholder="Capture unknowns, dependencies, or risks to explore…"
 					rows={3}
-					textareaClassName="min-h-[5rem] text-sm leading-6"
+					textareaClassName="min-h-[5rem] max-h-[60vh] overflow-y-auto text-sm leading-6"
 					textareaProps={{
 						id: "create-spec-open-questions",
 						name: "openQuestions",

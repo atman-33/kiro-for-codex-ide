@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from "react";
 import type React from "react";
 
 type TextareaPanelProps = {
@@ -36,6 +37,38 @@ export function TextareaPanel({
 	containerStyle,
 	children,
 }: TextareaPanelProps) {
+	const textareaInternalRef = useRef<HTMLTextAreaElement | null>(null);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: ignore
+	useLayoutEffect(() => {
+		const node = textareaInternalRef.current;
+		if (!node) {
+			return;
+		}
+
+		node.style.height = "auto";
+		node.style.height = `${node.scrollHeight}px`;
+	}, [value]);
+
+	const assignTextareaRef = (node: HTMLTextAreaElement | null) => {
+		textareaInternalRef.current = node;
+
+		if (!textareaRef) {
+			return;
+		}
+
+		if (typeof textareaRef === "function") {
+			textareaRef(node);
+			return;
+		}
+
+		if (typeof textareaRef === "object") {
+			(
+				textareaRef as React.MutableRefObject<HTMLTextAreaElement | null>
+			).current = node;
+		}
+	};
+
 	return (
 		<div
 			className={
@@ -58,7 +91,7 @@ export function TextareaPanel({
 					onChange={onChange}
 					onKeyDown={onKeyDown}
 					placeholder={placeholder}
-					ref={textareaRef}
+					ref={assignTextareaRef}
 					rows={rows}
 					{...(textareaProps ?? {})}
 					value={value}
