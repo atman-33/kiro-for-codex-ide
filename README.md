@@ -13,7 +13,7 @@ A VS Code extension that brings spec-driven development to Codex CLI, leveraging
 
 ### 📝 Spec Management
 
-- Run `Kiro for Codex IDE: Create New Spec` (`kiro-codex-ide.spec.create`) to launch the guided prompt. This will pass the context to the VS Code Codex extension's chat, where you can interact to create the spec.
+- Run `Kiro for Codex IDE: Create New Spec` (`kiro-codex-ide.spec.create`) to open the Create Spec dialog. Provide the required summary alongside optional product context, technical constraints, and open questions; drafts auto-save so you can resume later. Submitting sends the compiled request to the VS Code Codex extension's chat to finish generating the spec.
 - Browse generated specs in the **Specs** view; each spec exposes Requirements, Design, and Tasks nodes with quick-open commands.
 - Execute individual checklist items from `tasks.md` via the "Start Task" CodeLens, which marks the checklist and passes the task context to the VS Code Codex extension's chat. You can then interact with the chat to execute the task.
 
@@ -47,8 +47,9 @@ Search for "Kiro for Codex IDE" in the VS Code Marketplace and install the exten
 ### Create a Spec
 1. Open the Kiro for Codex IDE activity bar container.
 2. Choose **Specs** → **Create New Spec**.
-3. Describe the feature in the VS Code Codex extension's chat. The extension will then generate requirements, design, and tasks under `.codex/specs/<spec-name>/`.
-4. Review each document before moving to the next step.
+3. Fill out the Create Spec dialog: the summary is required, while product context, technical constraints, and open questions are optional. Drafts auto-save while you type, and closing the dialog prompts you to discard or resume later.
+4. Press **Create Spec** to send the compiled prompt to the VS Code Codex extension's chat, then continue the guided flow there.
+5. Review each generated document before moving to the next step.
 
 ### Execute Tasks from `tasks.md`
 1. Open the generated `tasks.md` file.
@@ -91,8 +92,6 @@ Paths accept custom locations inside the workspace; the extension mirrors watche
 │       └── tasks.md
 ├── steering/
 │   └── *.md                # Product / tech / structure guidance
-├── settings/
-│   └── kiroCodex-settings.json
 LICENSE
 src/
 ├── extension.ts            # Activation, command registration, tree providers
