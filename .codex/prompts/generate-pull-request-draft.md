@@ -1,25 +1,36 @@
-# Generate Pull Request Title and Description from Git Diff and Commits
+# Generate Pull Request Title and Description (Interactive Workflow)
 
 You are a member of a software development team.
-Your task is to create a **clear, concise, and professional Pull Request (PR) title and description**.
-
-* **Target branch:** `main`
-* Review the **diff and commit history** compared to the `main` branch and summarize the changes.
+Your task is to create a **clear, concise, and professional Pull Request (PR) title and description** — step by step, with user confirmation at each stage.
 
 ---
 
-## Output Requirements
+## Workflow Steps
 
-1. **Generate both a PR title and PR body.**
-2. **Write the PR message to `.tmp/pull-request-message-draft.md`.**
+### **Step 1 — Confirm Target Branch**
 
-   * If the file already exists, **completely clear its contents before writing**.
-   * Save the file in **UTF-8 (LF)** encoding.
-3. Follow the template below for the PR body.
+Ask the user which branch the PR will be merged **into** (target branch).
+If the user does not specify, suggest `main` as the default.
+
+> Example:
+> “Which branch should this PR target? (default: main)”
 
 ---
 
-## Output Template
+### **Step 2 — Generate Draft PR Message**
+
+Once the target branch is confirmed:
+
+1. Review the **git diff** and **commit history** compared to the confirmed target branch.
+2. Generate both a **PR title** and **PR body draft**.
+3. Write the draft message to `.tmp/pull-request-message-draft.md`.
+
+**File Rules:**
+
+* If the file already exists, **clear its contents completely before writing**.
+* Save the file in **UTF-8 (LF)** encoding.
+
+Use the following **template** for the draft:
 
 ```
 # Pull Request Message (Draft)
@@ -39,10 +50,34 @@ Briefly summarize what changes this PR introduces.
 
 ---
 
-## Generation Instructions
+### **Step 3 — Ask for User Review**
 
-1. Use the **commit messages and diff details** to summarize the “Changes” section accurately.
-2. Write the content in **English**, maintaining a **professional and business-appropriate tone**.
-3. The PR title should be **concise (≤ 80 characters)** and summarize the main intent of the change.
-4. If possible, include hints about affected components, features, or fixes in the title (e.g., “Fix build script error in CI pipeline”).
-5. Ensure the output file `.tmp/pull-request-message-draft.md` contains **only the new generated message**, with no leftover content.
+After generating the draft file, show a short preview and ask:
+
+> “Please review the draft in `.tmp/pull-request-message-draft.md`.
+> Would you like to revise it, or proceed to create the Pull Request?”
+
+If the user requests changes, regenerate the draft accordingly.
+
+---
+
+### **Step 4 — Create the Pull Request**
+
+When the user approves the draft:
+
+* Run the following command to create the Pull Request automatically using GitHub CLI:
+
+```
+gh pr create --fill --title "<generated title>" --body-file .tmp/pull-request-message-draft.md --base <target branch>
+```
+
+Confirm successful creation, and display the resulting PR link.
+
+---
+
+## Additional Requirements
+
+1. All text must be written in **English**, with a **professional and business-appropriate tone**.
+2. The PR title should be **≤ 80 characters**, summarizing the intent clearly (e.g., “Add autosave logic to CreateSpec controller”).
+3. Include hints about the **affected components, features, or fixes** when possible.
+4. Ensure the output file `.tmp/pull-request-message-draft.md` contains **only the new generated message**, with no leftover content.
