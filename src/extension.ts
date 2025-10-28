@@ -92,7 +92,7 @@ export async function activate(context: ExtensionContext) {
 
 	// Initialize feature managers with output channel
 	specManager = new SpecManager(context, outputChannel);
-	steeringManager = new SteeringManager(codexProvider, outputChannel);
+	steeringManager = new SteeringManager(context, codexProvider, outputChannel);
 
 	// Register tree data providers
 	const overviewProvider = new OverviewProvider(context);
