@@ -33,13 +33,6 @@ Once the target branch is confirmed:
 Use the following **template** for the draft:
 
 ```
-# Pull Request Message (Draft)
-
-## Title
-<Write the PR title here>
-
-## Body
-
 ### Overview
 Briefly summarize what changes this PR introduces.
 
