@@ -2,6 +2,7 @@ import { homedir } from "os";
 import { join } from "path";
 import {
 	FileType,
+	type ExtensionContext,
 	type OutputChannel,
 	ProgressLocation,
 	Uri,
@@ -14,19 +15,31 @@ import { PromptLoader } from "../../services/prompt-loader";
 import { sendPromptToChat } from "../../utils/chat-prompt-runner";
 import { ConfigManager } from "../../utils/config-manager";
 import { NotificationUtils } from "../../utils/notification-utils";
+import { CreateSteeringInputController } from "./create-steering-input-controller";
 
 export class SteeringManager {
 	private readonly configManager: ConfigManager;
 	private readonly promptLoader: PromptLoader;
 	private readonly codexProvider: CodexProvider;
 	private readonly outputChannel: OutputChannel;
+	private readonly createSteeringInputController: CreateSteeringInputController;
 
-	constructor(codexProvider: CodexProvider, outputChannel: OutputChannel) {
+	constructor(
+		context: ExtensionContext,
+		codexProvider: CodexProvider,
+		outputChannel: OutputChannel
+	) {
 		this.configManager = ConfigManager.getInstance();
 		this.configManager.loadSettings();
 		this.promptLoader = PromptLoader.getInstance();
 		this.codexProvider = codexProvider;
 		this.outputChannel = outputChannel;
+		this.createSteeringInputController = new CreateSteeringInputController({
+			context,
+			configManager: this.configManager,
+			promptLoader: this.promptLoader,
+			outputChannel: this.outputChannel,
+		});
 	}
 
 	getSteeringBasePath(): string {
@@ -34,47 +47,19 @@ export class SteeringManager {
 	}
 
 	async createCustom() {
-		// Get project context and guidance needs
-		const description = await window.showInputBox({
-			title: "📝 Create Steering Document 📝",
-			prompt: "Describe what guidance you need for your project",
-			placeHolder:
-				"e.g., API design patterns for REST endpoints, testing strategy for React components",
-			ignoreFocusOut: false,
-		});
-
-		if (!description) {
-			return;
-		}
-
-		const workspaceFolder = workspace.workspaceFolders?.[0];
-		if (!workspaceFolder) {
-			window.showErrorMessage("No workspace folder open");
-			return;
-		}
-
-		// Create steering directory if it doesn't exist
-		const steeringPath = join(
-			workspaceFolder.uri.fsPath,
-			this.getSteeringBasePath()
-		);
-
 		try {
-			// Ensure directory exists
-			await workspace.fs.createDirectory(Uri.file(steeringPath));
-
-			const prompt = this.promptLoader.renderPrompt("create-custom-steering", {
-				description,
-				steeringPath: this.getSteeringBasePath(),
-			});
-
-			await sendPromptToChat(prompt);
-
-			await NotificationUtils.showAutoDismissNotification(
-				"Sent the steering creation prompt to ChatGPT. Continue the conversation there."
-			);
+			await this.createSteeringInputController.open();
 		} catch (error) {
-			window.showErrorMessage(`Failed to create steering document: ${error}`);
+			const message =
+				error instanceof Error
+					? error.message
+					: "Unable to open Create Steering dialog";
+			this.outputChannel.appendLine(
+				`[SteeringManager] Failed to open Create Steering dialog: ${message}`
+			);
+			window.showErrorMessage(
+				`Failed to open Create Steering dialog: ${message}`
+			);
 		}
 	}
 
