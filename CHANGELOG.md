@@ -2,6 +2,21 @@
 
 ---
 
+## v0.1.5 2025-10-28
+
+### Added
+
+- Implement Create Steering Input Controller and associated UI
+
+### Changed
+
+- Merge pull request #11 from atman-33/feature/steering-input-box
+- update pull request template with new placeholder
+- update pull-request documentation template and instructions
+- add custom steering dialog for richer input experience
+- add OpenSpec change proposal templates and project structure
+- Merge pull request #10 from atman-33/version-bump/v0.1.4
+
 ## v0.1.4 2025-10-21
 
 ### Added
