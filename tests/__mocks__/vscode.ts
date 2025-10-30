@@ -94,3 +94,60 @@ export const FileType = {
 export const TextEditorRevealType = {
 	Default: 0,
 };
+
+export const TreeItemCollapsibleState = {
+	None: 0,
+	Collapsed: 1,
+	Expanded: 2,
+} as const;
+export type TreeItemCollapsibleState =
+	(typeof TreeItemCollapsibleState)[keyof typeof TreeItemCollapsibleState];
+
+export class ThemeIcon {
+	readonly id: string;
+
+	constructor(id: string) {
+		this.id = id;
+	}
+}
+
+export class TreeItem {
+	label: string;
+	collapsibleState: TreeItemCollapsibleState;
+	iconPath: ThemeIcon | undefined;
+	tooltip: string | undefined;
+	description: string | undefined;
+	command: unknown;
+	resourceUri: { fsPath: string } | undefined;
+
+	constructor(label: string, collapsibleState: TreeItemCollapsibleState) {
+		this.label = label;
+		this.collapsibleState = collapsibleState;
+	}
+}
+
+export class EventEmitter<T> {
+	private readonly listeners: Array<(event: T) => void> = [];
+
+	readonly event = (listener: (event: T) => void) => {
+		this.listeners.push(listener);
+		return {
+			dispose: vi.fn(() => {
+				const index = this.listeners.indexOf(listener);
+				if (index >= 0) {
+					this.listeners.splice(index, 1);
+				}
+			}),
+		};
+	};
+
+	fire = (event: T): void => {
+		for (const listener of [...this.listeners]) {
+			listener(event);
+		}
+	};
+
+	dispose = vi.fn(() => {
+		this.listeners.length = 0;
+	});
+}
