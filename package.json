@@ -138,7 +138,7 @@
       },
       {
         "view": "kiro-codex-ide.views.overview",
-        "contents": "Configure Kiro for Codex IDE\n\n[$(gear) Open Settings](command:kiro-codex-ide.settings.open)\n[$(question) Help](command:kiro-codex-ide.help.open)"
+        "contents": "Configure Kiro for Codex IDE\n\n[$(gear) Open Settings](command:kiro-codex-ide.settings.open)\n[$(file-text) Open Global Config (config.toml)](command:kiro-codex-ide.settings.openGlobalConfig)\n[$(question) Help](command:kiro-codex-ide.help.open)"
       }
     ],
     "commands": [
@@ -232,6 +232,12 @@
         "icon": "$(gear)"
       },
       {
+        "command": "kiro-codex-ide.settings.openGlobalConfig",
+        "title": "Open Global Config (config.toml)",
+        "category": "Kiro for Codex IDE",
+        "icon": "$(file-text)"
+      },
+      {
         "command": "kiroCodex.help.open",
         "title": "Kiro Help",
         "category": "Kiro for Codex",
@@ -273,6 +279,11 @@
         {
           "command": "kiro-codex-ide.prompts.refresh",
           "when": "view == kiro-codex-ide.views.promptsExplorer",
+          "group": "navigation@2"
+        },
+        {
+          "command": "kiro-codex-ide.settings.openGlobalConfig",
+          "when": "view == kiro-codex-ide.views.overview",
           "group": "navigation@2"
         }
       ],
@@ -316,6 +327,9 @@
         {
           "command": "kiro-codex-ide.prompts.create",
           "when": "workspaceFolderCount > 0"
+        },
+        {
+          "command": "kiro-codex-ide.settings.openGlobalConfig"
         }
       ]
     }
