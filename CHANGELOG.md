@@ -2,6 +2,25 @@
 
 ---
 
+## v0.1.6 2025-10-30
+
+### Added
+
+- add Open Global Config command to sidebar
+- enhance prompts explorer with project and global prompt management
+
+### Changed
+
+- Merge pull request #14 from atman-33/feature/open-config
+- add specs to add settings config shortcut for global Codex config
+- Merge pull request #13 from atman-33/feature/use-global-prompts
+- add specs to support global prompts in the explorer tree
+- Merge pull request #12 from atman-33/version-bump/v0.1.5
+
+### Fixed
+
+- correct spelling in filename and documentation
+
 ## v0.1.5 2025-10-28
 
 ### Added
