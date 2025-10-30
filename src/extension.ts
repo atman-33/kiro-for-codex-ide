@@ -1,4 +1,5 @@
 import { homedir } from "os";
+import { join } from "node:path";
 import type { FileSystemWatcher } from "vscode";
 import {
 	commands,
@@ -475,6 +476,43 @@ function registerCommands(
 				VSC_CONFIG_NAMESPACE
 			);
 		}),
+		commands.registerCommand(
+			"kiro-codex-ide.settings.openGlobalConfig",
+			async () => {
+				outputChannel.appendLine("Opening global Codex config...");
+				const userHome =
+					homedir() || process.env.HOME || process.env.USERPROFILE;
+
+				if (!userHome) {
+					window.showErrorMessage(
+						"Unable to resolve the user home directory for Codex config."
+					);
+					return;
+				}
+
+				const configUri = Uri.file(join(userHome, ".codex", "config.toml"));
+
+				try {
+					await workspace.fs.stat(configUri);
+				} catch {
+					window.showWarningMessage(
+						`Global Codex config not found at ${configUri.fsPath}. Create the file manually to customize Codex CLI.`
+					);
+					return;
+				}
+
+				try {
+					const document = await workspace.openTextDocument(configUri);
+					await window.showTextDocument(document, { preview: false });
+				} catch (error) {
+					const message =
+						error instanceof Error ? error.message : String(error);
+					window.showErrorMessage(
+						`Failed to open global Codex config: ${message}`
+					);
+				}
+			}
+		),
 
 		// biome-ignore lint/suspicious/useAwait: ignore
 		commands.registerCommand("kiro-codex-ide.help.open", async () => {
