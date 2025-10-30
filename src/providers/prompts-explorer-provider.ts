@@ -1,4 +1,5 @@
 import { basename } from "path";
+import { homedir } from "os";
 import {
 	type Command,
 	commands,
@@ -18,6 +19,8 @@ import { addDocumentToCodexChat } from "../utils/codex-chat-utils";
 import { ConfigManager } from "../utils/config-manager";
 
 const { joinPath } = Uri;
+
+type PromptSource = "project" | "global";
 
 type TreeEventPayload = PromptItem | undefined | null | void;
 
@@ -134,43 +137,113 @@ export class PromptsExplorerProvider implements TreeDataProvider<PromptItem> {
 
 	getTreeItem = (element: PromptItem): TreeItem => element;
 
-	getChildren = async (element?: PromptItem): Promise<PromptItem[]> => {
-		if (element) {
-			return [];
+	getChildren = (element?: PromptItem): Promise<PromptItem[]> => {
+		if (!element) {
+			return Promise.resolve(this.getRootItems());
 		}
 
+		if (element.contextValue === "prompt-group-project") {
+			return this.getPromptGroupChildren("project");
+		}
+
+		if (element.contextValue === "prompt-group-global") {
+			return this.getPromptGroupChildren("global");
+		}
+
+		return Promise.resolve([]);
+	};
+
+	private readonly getRootItems = (): PromptItem[] => {
+		const projectDescription = this.configManager.getPath("prompts");
+		const globalDescription = this.getGlobalPromptsLabel();
+
+		return [
+			new PromptItem(
+				"Project",
+				TreeItemCollapsibleState.Collapsed,
+				"prompt-group-project",
+				{
+					description: projectDescription,
+					tooltip: `Project prompts located at ${projectDescription}`,
+					source: "project",
+				}
+			),
+			new PromptItem(
+				"Global",
+				TreeItemCollapsibleState.Collapsed,
+				"prompt-group-global",
+				{
+					description: globalDescription,
+					tooltip: `Global prompts located at ${globalDescription}`,
+					source: "global",
+				}
+			),
+		];
+	};
+
+	private readonly getPromptGroupChildren = (
+		source: PromptSource
+	): Promise<PromptItem[]> => {
+		if (this.isLoading) {
+			return Promise.resolve([this.createLoadingItem()]);
+		}
+
+		if (source === "project") {
+			return this.getProjectPromptItems();
+		}
+
+		return this.getGlobalPromptItems();
+	};
+
+	private readonly getProjectPromptItems = (): Promise<PromptItem[]> => {
 		const rootUri = this.getPromptsRoot();
 		if (!rootUri) {
-			return [
+			return Promise.resolve([
 				new PromptItem(
 					"Open a workspace to manage prompts",
 					TreeItemCollapsibleState.None,
 					"prompts-empty"
 				),
-			];
+			]);
 		}
 
-		if (this.isLoading) {
-			return [
+		return this.createPromptItems(rootUri, "project");
+	};
+
+	private readonly getGlobalPromptItems = (): Promise<PromptItem[]> => {
+		const rootUri = this.getGlobalPromptsRoot();
+		if (!rootUri) {
+			return Promise.resolve([
 				new PromptItem(
-					"Loading prompts...",
+					"Global prompts directory not found",
 					TreeItemCollapsibleState.None,
-					"prompts-loading"
+					"prompts-empty"
 				),
-			];
+			]);
 		}
 
+		return this.createPromptItems(rootUri, "global");
+	};
+
+	private readonly createPromptItems = async (
+		rootUri: Uri,
+		source: PromptSource
+	): Promise<PromptItem[]> => {
 		const promptFiles = await this.readMarkdownFiles(rootUri);
+
 		if (promptFiles.length === 0) {
-			const promptsPathLabel = this.configManager.getPath("prompts");
+			const label =
+				source === "project"
+					? this.configManager.getPath("prompts")
+					: this.getGlobalPromptsLabel();
 			return [
 				new PromptItem(
 					"No prompts found",
 					TreeItemCollapsibleState.None,
 					"prompts-empty",
-					undefined,
-					undefined,
-					`Create prompts under ${promptsPathLabel}`
+					{
+						tooltip: `Add prompts under ${label}`,
+					}
 				),
 			];
 		}
@@ -188,10 +261,42 @@ export class PromptsExplorerProvider implements TreeDataProvider<PromptItem> {
 					basename(pathString),
 					TreeItemCollapsibleState.None,
 					"prompt",
-					uri,
-					command
+					{
+						resourceUri: uri,
+						command,
+						source,
+					}
 				);
 			});
+	};
+
+	private readonly createLoadingItem = (): PromptItem =>
+		new PromptItem(
+			"Loading prompts...",
+			TreeItemCollapsibleState.None,
+			"prompts-loading"
+		);
+
+	private readonly getGlobalPromptsRoot = (): Uri | undefined => {
+		try {
+			const homeUri = Uri.file(homedir());
+			return joinPath(homeUri, ".codex", "prompts");
+		} catch {
+			return;
+		}
+	};
+
+	private readonly getGlobalPromptsLabel = (): string => {
+		const home = homedir();
+		if (!home) {
+			return ".codex/prompts";
+		}
+
+		if (process.platform === "win32") {
+			return `${home}\\.codex\\prompts`;
+		}
+
+		return `${home}/.codex/prompts`;
 	};
 
 	private readonly getPromptsRoot = (): Uri | undefined => {
@@ -237,56 +342,107 @@ export class PromptsExplorerProvider implements TreeDataProvider<PromptItem> {
 	};
 }
 
+type PromptItemOptions = {
+	resourceUri?: Uri;
+	command?: Command;
+	tooltip?: string;
+	description?: string;
+	source?: PromptSource;
+};
+
 class PromptItem extends TreeItem {
 	readonly contextValue: string;
-	// biome-ignore lint/nursery/useMaxParams: ignore
-	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: ignore
+	readonly source: PromptSource | undefined;
+
 	constructor(
 		label: string,
 		collapsibleState: TreeItemCollapsibleState,
 		contextValue: string,
-		resourceUri?: Uri,
-		command?: Command,
-		tooltipOverride?: string
+		options?: PromptItemOptions
 	) {
 		super(label, collapsibleState);
 
 		this.contextValue = contextValue;
+		this.source = options?.source;
 
-		if (command) {
-			this.command = command;
+		if (options?.command) {
+			this.command = options.command;
 		}
 
-		if (contextValue === "prompts-loading") {
-			this.iconPath = new ThemeIcon("sync~spin");
-			this.tooltip = tooltipOverride ?? "Loading prompts...";
-			return;
-		}
-
-		if (contextValue === "prompts-empty") {
-			this.iconPath = new ThemeIcon("info");
-			this.tooltip =
-				tooltipOverride ??
-				"Create prompts under the configured prompts directory";
-			return;
-		}
-
-		if (contextValue === "prompt") {
-			this.iconPath = new ThemeIcon("file-code");
-			if (resourceUri) {
-				this.resourceUri = resourceUri;
-				let description: string | undefined;
-				try {
-					description = workspace.asRelativePath(resourceUri, false);
-				} catch {
-					description = undefined;
-				}
-				this.description =
-					description && description.length > 0
-						? description
-						: resourceUri.fsPath;
-				this.tooltip = tooltipOverride ?? this.description;
-			}
+		const handler = PromptItem.contextHandlers[contextValue];
+		if (handler) {
+			handler(this, options);
+		} else if (options?.tooltip) {
+			this.tooltip = options.tooltip;
 		}
 	}
+
+	private static readonly applyFolderContext = (
+		item: PromptItem,
+		options?: PromptItemOptions
+	): void => {
+		item.iconPath = new ThemeIcon("folder");
+		item.tooltip = options?.tooltip;
+		item.description = options?.description;
+	};
+
+	private static readonly formatResourceDescription = (uri: Uri): string => {
+		const relativePath = PromptItem.tryGetRelativePath(uri);
+		if (relativePath && relativePath.length > 0) {
+			return relativePath;
+		}
+
+		return uri.fsPath;
+	};
+
+	private static readonly tryGetRelativePath = (
+		uri: Uri
+	): string | undefined => {
+		try {
+			return workspace.asRelativePath(uri, false);
+		} catch {
+			return;
+		}
+	};
+
+	private static readonly contextHandlers: Record<
+		string,
+		(item: PromptItem, options?: PromptItemOptions) => void
+	> = {
+		"prompts-loading": (item, options) => {
+			item.iconPath = new ThemeIcon("sync~spin");
+			item.tooltip = options?.tooltip ?? "Loading prompts...";
+		},
+		"prompts-empty": (item, options) => {
+			item.iconPath = new ThemeIcon("info");
+			item.tooltip =
+				options?.tooltip ??
+				"Create prompts under the configured prompts directory";
+		},
+		prompt: (item, options) => {
+			item.iconPath = new ThemeIcon("file-code");
+			if (!options) {
+				return;
+			}
+
+			if (!options.resourceUri) {
+				if (options.tooltip) {
+					item.tooltip = options.tooltip;
+				}
+				if (options.description) {
+					item.description = options.description;
+				}
+				return;
+			}
+
+			item.resourceUri = options.resourceUri;
+			const description =
+				options.description ??
+				PromptItem.formatResourceDescription(options.resourceUri);
+			item.description = description;
+			item.tooltip = options.tooltip ?? description;
+		},
+		"prompt-group-project": PromptItem.applyFolderContext,
+		"prompt-group-global": PromptItem.applyFolderContext,
+	};
 }
